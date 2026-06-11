@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Atar Noder Neder | Tetris</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet"/>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        "primary": "#006d36","on-primary": "#ffffff",
+        "surface": "#f7f9fb","on-surface": "#191c1e",
+        "on-surface-variant": "#3e4a3f","background": "#f7f9fb",
+      },
+      fontFamily: { "body": ["Plus Jakarta Sans"] },
+    },
+  },
+}
+</script>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: 'Plus Jakarta Sans', sans-serif; }
+  .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+  .hide-scrollbar::-webkit-scrollbar { display: none; }
+  .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+  #gameCanvas { display: block; image-rendering: pixelated; }
+
+  /* ── Arcade side panels — light theme ── */
+  .arcade-panel {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  .arcade-section {
+    padding: 10px 12px;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  .arcade-section:last-child { border-bottom: none; }
+  .arcade-label {
+    font-family: 'Orbitron', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    color: #94a3b8;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+  }
+  .arcade-value {
+    font-family: 'Orbitron', monospace;
+    font-size: 22px;
+    font-weight: 900;
+    color: #1e293b;
+    line-height: 1;
+  }
+  .arcade-value.green { color: #16a34a; }
+  .arcade-value.cyan  { color: #0891b2; }
+  .arcade-value.amber { color: #d97706; }
+
+  .next-slot {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 4px;
+  }
+  .next-slot:last-child { margin-bottom: 0; }
+  .next-slot.first-slot {
+    border-color: #cbd5e1;
+    background: #f1f5f9;
+  }
+
+  .key-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    background: #f1f5f9; border: 1px solid #cbd5e1;
+    border-radius: 4px; padding: 1px 5px;
+    font-size: 9px; font-weight: 800; color: #475569;
+    font-family: monospace;
+  }
+
+  .bar-wrap { width:100%; height:3px; background:#e2e8f0; border-radius:99px; overflow:hidden; margin-top:4px; }
+  .bar-inner { height:100%; border-radius:99px; transition:width .4s; background:linear-gradient(90deg,#16a34a,#0891b2); }
+
+  /* inline stat rows in panels */
+  .panel-stat-label { font-size:9px; color:#94a3b8; }
+  .panel-stat-val   { font-size:10px; font-weight:800; color:#334155; }
+  .panel-stat-val.green { color:#16a34a; }
+  .panel-stat-val.amber { color:#d97706; }
+
+  /* Game area */
+  #game-area {
+    background: #f8fafc;
+    border-left: 1px solid #e2e8f0;
+    border-right: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 16px;
+  }
+
+  /* Outer BG */
+  .game-bg { background: #f1f5f9; }
+</style>
+</head>
+<body class="bg-background text-on-surface h-screen overflow-hidden flex">
+
+<!-- ── SIDEBAR ── -->
+<aside dir="ltr" class="fixed left-0 top-0 h-full flex flex-col p-5 z-40 bg-slate-200 w-64 rounded-r-[32px] shadow-xl font-['Plus_Jakarta_Sans'] text-sm font-medium">
+  <div class="mb-8 px-2">
+    <h1 class="text-lg font-black text-emerald-800 tracking-tighter">Atar Noder Neder</h1>
+    <p class="text-slate-500 text-xs">Elite Member</p>
+  </div>
+  <nav class="flex-1 space-y-2">
+    <a href="index.html" class="flex items-center gap-3 px-4 py-2 text-slate-600 rounded-2xl hover:bg-slate-100 transition-colors">
+      <span class="material-symbols-outlined text-base">arrow_back</span><span>Go back to Lobby</span>
+    </a>
+    <a href="wordle.html" class="flex items-center gap-3 px-4 py-2 text-slate-600 rounded-2xl hover:bg-slate-100 transition-colors">
+      <span class="material-symbols-outlined text-base">match_word</span><span>Wordle</span>
+    </a>
+    <a href="yahtzee.html" class="flex items-center gap-3 px-4 py-2 text-slate-600 rounded-2xl hover:bg-slate-100 transition-colors">
+      <span class="material-symbols-outlined text-base">casino</span><span>Yahtzee</span>
+    </a>
+    <a href="minesweeper.html" class="flex items-center gap-3 px-4 py-2 text-slate-600 rounded-2xl hover:bg-slate-100 transition-colors">
+      <span class="material-symbols-outlined text-base" style="font-variation-settings:'FILL' 1;">brightness_high</span><span>Minesweeper</span>
+    </a>
+    <a href="blackjack.html" class="flex items-center gap-3 px-4 py-2 text-slate-600 rounded-2xl hover:bg-slate-100 transition-colors">
+      <span class="material-symbols-outlined text-base" style="font-variation-settings:'FILL' 1;">playing_cards</span><span>Blackjack</span>
+    </a>
+    <a href="bubbleshooter.html" class="flex items-center gap-3 px-4 py-2 text-slate-600 rounded-2xl hover:bg-slate-100 transition-colors">
+      <span class="material-symbols-outlined text-base" style="font-variation-settings:'FILL' 1;">bubble_chart</span><span>Bubble Shooter</span>
+    </a>
+    <a href="tetris.html" class="flex items-center gap-3 px-4 py-2 bg-white text-emerald-700 rounded-2xl shadow-sm">
+      <span class="material-symbols-outlined text-base" style="font-variation-settings:'FILL' 1;">view_agenda</span><span>Tetris</span>
+    </a>
+  </nav>
+</aside>
+
+<!-- ── MAIN ── -->
+<main class="ml-64 flex-1 flex flex-col h-screen overflow-hidden game-bg">
+
+  <!-- HEADER -->
+  <header dir="rtl" class="flex justify-between items-center w-full px-6 h-16 bg-white/70 backdrop-blur-xl sticky top-0 z-30 shrink-0 border-b border-slate-100">
+    <div class="w-full flex justify-between items-center px-8">
+      <div class="flex items-center gap-3 text-primary font-bold">
+        <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1;">view_agenda</span>
+        <span class="text-lg">Tetris</span>
+      </div>
+      <div id="game-message" class="text-sm font-bold text-emerald-700"></div>
+      <div class="text-sm font-bold text-emerald-900">Atar Noder Neder - funded by AIPAC</div>
+    </div>
+  </header>
+
+  <!-- 3-column arcade layout -->
+  <div class="flex-1 flex overflow-hidden min-h-0 p-3 gap-3">
+
+    <!-- LEFT PANEL -->
+    <div class="w-44 shrink-0 flex flex-col gap-2 overflow-y-auto hide-scrollbar">
+      <div class="arcade-panel flex-1">
+        <!-- HOLD -->
+        <div class="arcade-section">
+          <div class="arcade-label">Hold <span style="font-size:8px;opacity:.45">[C]</span></div>
+          <div class="next-slot first-slot" style="height:66px;">
+            <canvas id="holdCanvas" width="100" height="58"></canvas>
+          </div>
+        </div>
+        <!-- SCORE -->
+        <div class="arcade-section">
+          <div class="arcade-label">Score</div>
+          <div class="arcade-value green" id="stat-score">0</div>
+        </div>
+        <!-- BEST -->
+        <div class="arcade-section">
+          <div class="arcade-label">Best</div>
+          <div class="arcade-value" id="stat-best">0</div>
+        </div>
+        <!-- LEVEL -->
+        <div class="arcade-section">
+          <div class="arcade-label">Level</div>
+          <div class="arcade-value cyan" id="stat-level">1</div>
+        </div>
+        <!-- LINES -->
+        <div class="arcade-section">
+          <div class="arcade-label">Lines</div>
+          <div class="arcade-value" id="stat-lines">0</div>
+          <div class="bar-wrap"><div class="bar-inner" id="c-progbar" style="width:0%"></div></div>
+          <div style="font-size:9px;color:#94a3b8;margin-top:3px;" id="c-progress">0/10 to next</div>
+        </div>
+        <!-- STATS -->
+        <div class="arcade-section">
+          <div class="arcade-label">Stats</div>
+          <div style="display:flex;flex-direction:column;gap:5px;">
+            <div style="display:flex;justify-content:space-between;">
+              <span style="font-size:9px;color:#94a3b8;">Tetrises</span>
+              <span style="font-size:10px;font-weight:800;color:#d97706;" id="c-tetrises">0</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;">
+              <span style="font-size:9px;color:#94a3b8;">Pieces</span>
+              <span style="font-size:10px;font-weight:800;color:#334155;" id="c-pieces">0</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;">
+              <span style="font-size:9px;color:#94a3b8;">Hard drops</span>
+              <span style="font-size:10px;font-weight:800;color:#334155;" id="c-harddrops">0</span>
+            </div>
+          </div>
+        </div>
+        <!-- CONTROLS -->
+        <div class="arcade-section">
+          <div class="arcade-label">Controls</div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-size:9px;color:#94a3b8;">Move</span>
+              <div style="display:flex;gap:2px;"><span class="key-badge">←</span><span class="key-badge">→</span></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-size:9px;color:#94a3b8;">Rotate CW</span>
+              <span class="key-badge">↑</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-size:9px;color:#94a3b8;">Rotate CCW</span>
+              <span class="key-badge">Z</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-size:9px;color:#94a3b8;">Soft drop</span>
+              <span class="key-badge">↓</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-size:9px;color:#94a3b8;">Hard drop</span>
+              <span class="key-badge">SPC</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-size:9px;color:#94a3b8;">Hold</span>
+              <span class="key-badge">C</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-size:9px;color:#94a3b8;">Pause</span>
+              <span class="key-badge">P</span>
+            </div>
+          </div>
+        </div>
+        <!-- BUTTONS -->
+        
+      </div>
+    </div>
+
+    <!-- CENTER: Game Canvas -->
+    <div id="game-area" class="flex-1 flex items-center justify-center min-h-0 rounded-2xl">
+      <canvas id="gameCanvas"></canvas>
+    </div>
+
+    <!-- RIGHT PANEL: Next 5 pieces + session -->
+    <div class="w-44 shrink-0 flex flex-col gap-2 overflow-y-auto hide-scrollbar">
+      <div class="arcade-panel flex-1">
+        <!-- NEXT -->
+        <div class="arcade-section flex-1">
+          <div class="arcade-label">Next</div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <div class="next-slot first-slot" style="height:70px;"><canvas id="nextCanvas0" width="110" height="62"></canvas></div>
+            <div class="next-slot" style="height:54px;"><canvas id="nextCanvas1" width="90" height="48"></canvas></div>
+            <div class="next-slot" style="height:54px;"><canvas id="nextCanvas2" width="90" height="48"></canvas></div>
+            <div class="next-slot" style="height:54px;"><canvas id="nextCanvas3" width="90" height="48"></canvas></div>
+            <div class="next-slot" style="height:54px;"><canvas id="nextCanvas4" width="90" height="48"></canvas></div>
+          </div>
+        </div>
+        <div class="arcade-section" style="display:flex;flex-direction:column;gap:6px;">
+          <button onclick="newGame()" style="width:100%;padding:7px;background:#16a34a;border:none;border-radius:8px;color:#fff;font-size:10px;font-weight:800;cursor:pointer;letter-spacing:.06em;font-family:'Orbitron',monospace;">NEW GAME</button>
+          <button onclick="togglePause()" id="pause-btn" style="width:100%;padding:7px;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:8px;color:#475569;font-size:10px;font-weight:800;cursor:pointer;letter-spacing:.06em;font-family:'Orbitron',monospace;">
+            <span id="pause-label">PAUSE</span>
+          </button>
+        </div>
+        <!-- SESSION -->
+        <div class="arcade-section">
+          <div class="arcade-label">Session</div>
+          <div style="display:flex;flex-direction:column;gap:5px;">
+            <div style="display:flex;justify-content:space-between;">
+              <span style="font-size:9px;color:#94a3b8;">Games</span>
+              <span style="font-size:10px;font-weight:800;color:#334155;" id="s-games">0</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;">
+              <span style="font-size:9px;color:#94a3b8;">Best score</span>
+              <span style="font-size:10px;font-weight:800;color:#16a34a;" id="s-best">0</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;">
+              <span style="font-size:9px;color:#94a3b8;">Total lines</span>
+              <span style="font-size:10px;font-weight:800;color:#334155;" id="s-lines">0</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;">
+              <span style="font-size:9px;color:#94a3b8;">Tetrises</span>
+              <span style="font-size:10px;font-weight:800;color:#d97706;" id="s-tetrises">0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+'use strict';
+
+// ═══════════════════════════════════════════════════════════
+//  TETROMINOES
+// ═══════════════════════════════════════════════════════════
+const PIECES = {
+  I: { color:'#06b6d4', shapes:[[[-1,0],[0,0],[1,0],[2,0]],[[-1,-1],[-1,0],[-1,1],[-1,2]],[[-2,0],[-1,0],[0,0],[1,0]],[[-1,-1],[0,-1],[0,0],[0,1]]] },
+  O: { color:'#eab308', shapes:[[[0,0],[1,0],[0,1],[1,1]],[[0,0],[1,0],[0,1],[1,1]],[[0,0],[1,0],[0,1],[1,1]],[[0,0],[1,0],[0,1],[1,1]]] },
+  T: { color:'#a855f7', shapes:[[[0,0],[-1,0],[1,0],[0,-1]],[[0,0],[0,-1],[0,1],[1,0]],[[0,0],[1,0],[-1,0],[0,1]],[[0,0],[0,1],[0,-1],[-1,0]]] },
+  S: { color:'#22c55e', shapes:[[[-1,1],[0,1],[0,0],[1,0]],[[0,-1],[0,0],[1,0],[1,1]],[[-1,0],[0,0],[0,-1],[1,-1]],[[-1,-1],[-1,0],[0,0],[0,1]]] },
+  Z: { color:'#ef4444', shapes:[[[-1,0],[0,0],[0,1],[1,1]],[[0,0],[0,1],[1,-1],[1,0]],[[-1,-1],[0,-1],[0,0],[1,0]],[[-1,0],[-1,1],[0,-1],[0,0]]] },
+  J: { color:'#3b82f6', shapes:[[[-1,0],[0,0],[1,0],[-1,-1]],[[0,-1],[0,0],[0,1],[1,-1]],[[1,1],[-1,0],[0,0],[1,0]],[[0,-1],[0,0],[0,1],[-1,1]]] },
+  L: { color:'#f97316', shapes:[[[-1,0],[0,0],[1,0],[1,-1]],[[0,-1],[0,0],[0,1],[1,1]],[[-1,1],[-1,0],[0,0],[1,0]],[[0,-1],[0,0],[0,1],[-1,-1]]] },
+};
+const PIECE_KEYS = Object.keys(PIECES);
+
+// ═══════════════════════════════════════════════════════════
+//  BOARD
+// ═══════════════════════════════════════════════════════════
+const COLS = 10, ROWS = 20;
+let board = [];
+function emptyBoard(){ board = Array.from({length:ROWS}, ()=>new Array(COLS).fill(null)); }
+
+// ═══════════════════════════════════════════════════════════
+//  CANVAS SETUP
+// ═══════════════════════════════════════════════════════════
+const canvas = document.getElementById('gameCanvas');
+const ctx    = canvas.getContext('2d');
+const holdCv = document.getElementById('holdCanvas');
+const hCtx   = holdCv.getContext('2d');
+const nextCanvases = [0,1,2,3,4].map(i => {
+  const cv = document.getElementById('nextCanvas'+i);
+  return { cv, ctx: cv.getContext('2d') };
+});
+
+let CELL = 30;
+function resizeCanvas(){
+  const wrap = document.getElementById('game-area');
+  const availW = wrap.clientWidth  - 8;
+  const availH = wrap.clientHeight - 8;
+  CELL = Math.max(18, Math.min(40, Math.floor(availW/COLS), Math.floor(availH/ROWS)));
+  canvas.width  = COLS * CELL;
+  canvas.height = ROWS * CELL;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  GAME STATE
+// ═══════════════════════════════════════════════════════════
+let score=0, level=1, lines=0, tetrises=0, pieces=0, hardDrops=0;
+let gameActive=false, paused=false, gameOver=false;
+let bag=[], nextQueue=[], holdPiece=null, canHold=true;
+let cur = { type:null, rot:0, x:0, y:0 };
+const sess = { games:0, best:0, lines:0, tetrises:0 };
+let lastDrop=0, dropDelay=800;
+
+// Lock delay — piece locks LOCK_DELAY ms after landing on something
+// Soft-drop also uses lock delay (NOT instant lock)
+const LOCK_DELAY = 500;
+let lockTimer=null, isOnGround=false, hardDropFlash=false;
+
+// Line-clear animation state
+let isClearing=false;
+// Saved board snapshot before flash (so we can restore original colors)
+let clearOrigRows=[], clearFullRows=[];
+
+// ═══════════════════════════════════════════════════════════
+//  7-BAG + QUEUE
+// ═══════════════════════════════════════════════════════════
+function refillBag(){
+  const b=[...PIECE_KEYS];
+  for(let i=b.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]]; }
+  bag.push(...b);
+}
+function nextFromBag(){ if(bag.length<8) refillBag(); return bag.shift(); }
+function fillQueue(){ while(nextQueue.length<5) nextQueue.push(nextFromBag()); }
+function dequeueNext(){
+  const t = nextQueue.shift();
+  fillQueue();
+  drawAllNextPieces();
+  return t;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  PIECE HELPERS
+// ═══════════════════════════════════════════════════════════
+function cells(type, rot){ return PIECES[type].shapes[rot%4]; }
+function color(type){ return PIECES[type].color; }
+function spawn(type){ cur = { type, rot:0, x:Math.floor(COLS/2)-1, y:1 }; }
+function validPos(type, rot, x, y){
+  for(const [dc,dr] of cells(type,rot)){
+    const nx=x+dc, ny=y+dr;
+    if(nx<0||nx>=COLS||ny>=ROWS) return false;
+    if(ny>=0 && board[ny][nx]) return false;
+  }
+  return true;
+}
+
+// SRS wall kicks
+const KICKS_JLSTZ = {
+  '0->1':[[0,0],[-1,0],[-1,1],[0,-2],[-1,-2]],
+  '1->0':[[0,0],[1,0],[1,-1],[0,2],[1,2]],
+  '1->2':[[0,0],[1,0],[1,-1],[0,2],[1,2]],
+  '2->1':[[0,0],[-1,0],[-1,1],[0,-2],[-1,-2]],
+  '2->3':[[0,0],[1,0],[1,1],[0,-2],[1,-2]],
+  '3->2':[[0,0],[-1,0],[-1,-1],[0,2],[-1,2]],
+  '3->0':[[0,0],[-1,0],[-1,-1],[0,2],[-1,2]],
+  '0->3':[[0,0],[1,0],[1,1],[0,-2],[1,-2]],
+};
+const KICKS_I = {
+  '0->1':[[0,0],[-2,0],[1,0],[-2,-1],[1,2]],
+  '1->0':[[0,0],[2,0],[-1,0],[2,1],[-1,-2]],
+  '1->2':[[0,0],[-1,0],[2,0],[-1,2],[2,-1]],
+  '2->1':[[0,0],[1,0],[-2,0],[1,-2],[-2,1]],
+  '2->3':[[0,0],[2,0],[-1,0],[2,1],[-1,-2]],
+  '3->2':[[0,0],[-2,0],[1,0],[-2,-1],[1,2]],
+  '3->0':[[0,0],[1,0],[-2,0],[1,-2],[-2,1]],
+  '0->3':[[0,0],[-1,0],[2,0],[-1,2],[2,-1]],
+};
+function tryRotate(dir){
+  const nr=(cur.rot+dir+4)%4, key=cur.rot+'->'+nr;
+  const table=(cur.type==='I'?KICKS_I:KICKS_JLSTZ)[key]||[[0,0]];
+  for(const [kx,ky] of table){
+    const nx=cur.x+kx, ny=cur.y-ky;
+    if(validPos(cur.type,nr,nx,ny)){ cur.rot=nr; cur.x=nx; cur.y=ny; resetLockDelay(); return true; }
+  }
+  return false;
+}
+
+function ghostY(){
+  let g=cur.y;
+  while(validPos(cur.type,cur.rot,cur.x,g+1)) g++;
+  return g;
+}
+
+// ── Lock delay ──
+function resetLockDelay(){
+  // Reset the lock timer on move/rotate while on ground
+  if(!isOnGround) return;
+  clearTimeout(lockTimer);
+  lockTimer = setTimeout(lockPiece, LOCK_DELAY);
+}
+function cancelLockDelay(){
+  clearTimeout(lockTimer);
+  lockTimer = null;
+  isOnGround = false;
+}
+function startLockDelay(){
+  if(isOnGround) return; // already counting
+  isOnGround = true;
+  lockTimer = setTimeout(lockPiece, LOCK_DELAY);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  LOCK — pieces lock after LOCK_DELAY, never instantly on soft drop
+// ═══════════════════════════════════════════════════════════
+function lockPiece(){
+  if(isClearing) return; // safety: don't lock during line clear animation
+  cancelLockDelay();
+  hardDropFlash = false;
+  for(const [dc,dr] of cells(cur.type,cur.rot)){
+    const nx=cur.x+dc, ny=cur.y+dr;
+    if(ny>=0) board[ny][nx] = color(cur.type);
+  }
+  canHold=true;
+  pieces++;
+  clearLines();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  CLEAR LINES — FIXED: no grey remnants, proper drop
+// ═══════════════════════════════════════════════════════════
+function clearLines(){
+  // Identify full rows
+  const full=[];
+  for(let r=0;r<ROWS;r++) if(board[r].every(c=>c!==null)) full.push(r);
+
+  if(!full.length){ spawnNext(); return; }
+
+  isClearing=true;
+
+  // *** CRITICAL: copy the array — NOT a reference ***
+  // If we do clearFullRows = full, the variable points to the same array
+  // and later mutations corrupt it mid-animation.
+  clearFullRows = [...full];
+  clearOrigRows = clearFullRows.map(r => [...board[r]]);
+
+  // Flash animation: toggle white ↔ original N times, then remove
+  const FLASH_TIMES = 4;   // number of white→color cycles
+  const FLASH_MS    = 60;  // ms per half-cycle
+  let tick = 0;
+
+  function flashTick(){
+    tick++;
+    const showWhite = (tick % 2 === 1);
+    clearFullRows.forEach((r, i) => {
+      board[r] = showWhite
+        ? new Array(COLS).fill('#ffffff')
+        : [...clearOrigRows[i]];
+    });
+    draw();
+
+    if(tick < FLASH_TIMES * 2){
+      setTimeout(flashTick, FLASH_MS);
+    } else {
+      // Done flashing — actually remove rows
+      // Sort descending so splicing from bottom doesn't shift upper indices
+      const sorted = [...clearFullRows].sort((a,b)=>b-a);
+      for(const r of sorted){
+        board.splice(r, 1);
+        board.unshift(new Array(COLS).fill(null));
+      }
+
+      // Score
+      const cnt = clearFullRows.length;
+      const pts = [0,100,300,500,800][cnt] * level;
+      score += pts;
+      lines += cnt;
+      if(cnt===4){ tetrises++; setMsg('🔥 TETRIS! +'+pts); }
+      else setMsg(['','Single','Double','Triple'][cnt]+' +'+pts);
+
+      // Level up every 10 lines
+      const newLv = Math.floor(lines/10)+1;
+      if(newLv > level){
+        level = newLv;
+        dropDelay = Math.max(80, 800-(level-1)*70);
+      }
+
+      updateStats();
+      isClearing = false;
+      clearFullRows = [];
+      clearOrigRows = [];
+      spawnNext();
+    }
+  }
+
+  setTimeout(flashTick, FLASH_MS);
+}
+
+function spawnNext(){
+  spawn(dequeueNext());
+  if(!validPos(cur.type,cur.rot,cur.x,cur.y)){ endGame(); return; }
+  draw();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  HOLD
+// ═══════════════════════════════════════════════════════════
+function holdAction(){
+  if(!canHold||!gameActive||paused||isClearing) return;
+  cancelLockDelay();
+  canHold=false;
+  if(!holdPiece){ holdPiece=cur.type; spawnNext(); }
+  else { const tmp=holdPiece; holdPiece=cur.type; spawn(tmp); }
+  drawHoldPiece();
+  draw();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  DRAW
+// ═══════════════════════════════════════════════════════════
+function drawCell(c2d, x, y, size, col, ghost){
+  if(!col) return;
+  c2d.save();
+  const pad=1;
+  if(ghost){
+    c2d.globalAlpha=0.25; c2d.fillStyle=col;
+    c2d.fillRect(x*size+pad, y*size+pad, size-pad*2, size-pad*2);
+  } else {
+    c2d.fillStyle=col;
+    c2d.shadowColor='rgba(0,0,0,0.18)'; c2d.shadowBlur=3;
+    c2d.fillRect(x*size+pad, y*size+pad, size-pad*2, size-pad*2);
+    c2d.shadowBlur=0;
+    // shine
+    c2d.fillStyle='rgba(255,255,255,0.28)';
+    c2d.fillRect(x*size+pad, y*size+pad, size-pad*2, 3);
+    c2d.fillRect(x*size+pad, y*size+pad, 3, size-pad*2);
+    // gradient
+    const g=c2d.createLinearGradient(x*size,y*size,(x+1)*size,(y+1)*size);
+    g.addColorStop(0,'rgba(255,255,255,0.08)'); g.addColorStop(1,'rgba(0,0,0,0.15)');
+    c2d.fillStyle=g;
+    c2d.fillRect(x*size+pad, y*size+pad, size-pad*2, size-pad*2);
+  }
+  c2d.restore();
+}
+
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle='#f8fafc';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  // Grid
+  ctx.strokeStyle='rgba(0,0,0,0.06)'; ctx.lineWidth=1;
+  for(let c=0;c<=COLS;c++){ ctx.beginPath();ctx.moveTo(c*CELL,0);ctx.lineTo(c*CELL,canvas.height);ctx.stroke(); }
+  for(let r=0;r<=ROWS;r++){ ctx.beginPath();ctx.moveTo(0,r*CELL);ctx.lineTo(canvas.width,r*CELL);ctx.stroke(); }
+
+  // Board
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(board[r][c]) drawCell(ctx,c,r,CELL,board[r][c],false);
+
+  if(gameActive && cur.type){
+    // Ghost
+    const gy=ghostY();
+    if(gy!==cur.y) for(const [dc,dr] of cells(cur.type,cur.rot)) drawCell(ctx,cur.x+dc,gy+dr,CELL,color(cur.type),true);
+
+    if(hardDropFlash){
+      for(const [dc,dr] of cells(cur.type,cur.rot)){
+        ctx.save();
+        ctx.fillStyle='#fff'; ctx.shadowColor='rgba(255,255,255,.9)'; ctx.shadowBlur=12;
+        const pad=1; ctx.fillRect((cur.x+dc)*CELL+pad,(cur.y+dr)*CELL+pad,CELL-pad*2,CELL-pad*2);
+        ctx.restore();
+      }
+    } else {
+      const alpha = isOnGround ? 0.75 : 1.0;
+      for(const [dc,dr] of cells(cur.type,cur.rot)){
+        ctx.save(); ctx.globalAlpha=alpha;
+        drawCell(ctx,cur.x+dc,cur.y+dr,CELL,color(cur.type),false);
+        ctx.restore();
+      }
+      // Lock-delay border
+      if(isOnGround){
+        ctx.save(); ctx.strokeStyle='rgba(0,0,0,0.35)'; ctx.lineWidth=1.5;
+        for(const [dc,dr] of cells(cur.type,cur.rot))
+          ctx.strokeRect((cur.x+dc)*CELL+1,(cur.y+dr)*CELL+1,CELL-2,CELL-2);
+        ctx.restore();
+      }
+    }
+  }
+
+  if(paused){
+    ctx.fillStyle='rgba(248,250,252,0.82)'; ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle='#1e293b'; ctx.textAlign='center';
+    ctx.font='900 '+Math.round(CELL*1.1)+'px Orbitron,sans-serif';
+    ctx.fillText('PAUSED',canvas.width/2,canvas.height/2-CELL*.5);
+    ctx.font='500 '+Math.round(CELL*.5)+'px Plus Jakarta Sans'; ctx.fillStyle='#64748b';
+    ctx.fillText('Press P to resume',canvas.width/2,canvas.height/2+CELL*.7);
+  }
+
+  if(gameOver){
+    ctx.fillStyle='rgba(248,250,252,0.88)'; ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.textAlign='center';
+    ctx.font='900 '+Math.round(CELL*1.0)+'px Orbitron,sans-serif'; ctx.fillStyle='#dc2626';
+    ctx.fillText('GAME OVER',canvas.width/2,canvas.height/2-CELL*1.3);
+    ctx.font='700 '+Math.round(CELL*.65)+'px Orbitron,sans-serif'; ctx.fillStyle='#16a34a';
+    ctx.fillText(score.toLocaleString(),canvas.width/2,canvas.height/2-CELL*.1);
+    ctx.font='500 '+Math.round(CELL*.45)+'px Plus Jakarta Sans'; ctx.fillStyle='#64748b';
+    ctx.fillText('Lines: '+lines+'   Level: '+level,canvas.width/2,canvas.height/2+CELL*.85);
+    ctx.font='500 '+Math.round(CELL*.38)+'px Plus Jakarta Sans'; ctx.fillStyle='#16a34a';
+    ctx.fillText('Click NEW GAME to play again',canvas.width/2,canvas.height/2+CELL*1.8);
+  }
+}
+
+// ── Mini piece preview ──
+function drawMini(c2d, type, cW, cH, scale){
+  c2d.clearRect(0,0,cW,cH);
+  if(!type) return;
+  const cs=cells(type,0);
+  const minC=Math.min(...cs.map(([c])=>c)), maxC=Math.max(...cs.map(([c])=>c));
+  const minR=Math.min(...cs.map(([,r])=>r)), maxR=Math.max(...cs.map(([,r])=>r));
+  const sz=Math.floor(Math.min(cW/(maxC-minC+3),cH/(maxR-minR+3))*(scale||1));
+  const offX=Math.round((cW-(maxC-minC+1)*sz)/2)-minC*sz;
+  const offY=Math.round((cH-(maxR-minR+1)*sz)/2)-minR*sz;
+  const col=color(type), pad=1;
+  for(const [dc,dr] of cs){
+    const px=offX+dc*sz, py=offY+dr*sz;
+    c2d.save();
+    c2d.fillStyle=col; c2d.shadowColor='rgba(0,0,0,.3)'; c2d.shadowBlur=4; c2d.shadowOffsetY=2;
+    c2d.fillRect(px+pad,py+pad,sz-pad*2,sz-pad*2);
+    c2d.shadowBlur=0; c2d.shadowOffsetY=0;
+    c2d.fillStyle='rgba(255,255,255,.3)';
+    c2d.fillRect(px+pad,py+pad,sz-pad*2,3); c2d.fillRect(px+pad,py+pad,3,sz-pad*2);
+    const g=c2d.createLinearGradient(px,py,px+sz,py+sz);
+    g.addColorStop(0,'rgba(255,255,255,.07)'); g.addColorStop(1,'rgba(0,0,0,.13)');
+    c2d.fillStyle=g; c2d.fillRect(px+pad,py+pad,sz-pad*2,sz-pad*2);
+    c2d.restore();
+  }
+}
+function drawAllNextPieces(){
+  nextCanvases.forEach(({cv,ctx:c2d},i)=>{
+    drawMini(c2d, nextQueue[i]||null, cv.width, cv.height, i===0?1:0.82);
+  });
+}
+function drawHoldPiece(){ drawMini(hCtx, holdPiece, holdCv.width, holdCv.height, 1); }
+
+// ═══════════════════════════════════════════════════════════
+//  GAME LOOP
+// ═══════════════════════════════════════════════════════════
+let rafId=null;
+function loop(ts){
+  rafId=requestAnimationFrame(loop);
+  if(!gameActive||paused||isClearing||gameOver){ draw(); return; }
+
+  if(ts - lastDrop > dropDelay){
+    lastDrop=ts;
+    if(validPos(cur.type,cur.rot,cur.x,cur.y+1)){
+      cur.y++;
+      // If we were on ground and now we moved down, cancel lock
+      if(isOnGround) cancelLockDelay();
+    } else {
+      // Can't move down — start lock delay if not already running
+      startLockDelay();
+    }
+  }
+  draw();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  INIT / END
+// ═══════════════════════════════════════════════════════════
+function newGame(){
+  if(rafId) cancelAnimationFrame(rafId);
+  cancelLockDelay();
+  emptyBoard();
+  score=0;level=1;lines=0;tetrises=0;pieces=0;hardDrops=0;
+  paused=false;gameOver=false;gameActive=true;canHold=true;
+  bag=[];nextQueue=[];holdPiece=null;dropDelay=800;lastDrop=0;
+  hardDropFlash=false;isClearing=false;clearFullRows=[];clearOrigRows=[];
+  refillBag();fillQueue();
+  spawn(dequeueNext());
+  drawAllNextPieces();drawHoldPiece();
+  sess.games++;
+  document.getElementById('s-games').textContent=sess.games;
+  document.getElementById('pause-label').textContent='PAUSE';
+  resizeCanvas();updateStats();
+  setMsg('▶ Good luck!');
+  rafId=requestAnimationFrame(loop);
+}
+
+function endGame(){
+  cancelLockDelay();
+  gameActive=false;gameOver=true;
+  if(score>sess.best){sess.best=score;document.getElementById('s-best').textContent=score.toLocaleString();}
+  sess.lines+=lines;document.getElementById('s-lines').textContent=sess.lines;
+  sess.tetrises+=tetrises;document.getElementById('s-tetrises').textContent=sess.tetrises;
+  document.getElementById('stat-best').textContent=Math.max(sess.best,score).toLocaleString();
+  setMsg('💥 Game Over! '+score.toLocaleString());
+  draw();
+}
+
+function togglePause(){
+  if(!gameActive||gameOver) return;
+  paused=!paused;
+  document.getElementById('pause-label').textContent=paused?'RESUME':'PAUSE';
+  if(paused) setMsg('⏸ Paused');
+  else { setMsg('▶ Go!'); lastDrop=performance.now(); }
+  draw();
+}
+
+function setMsg(m){ document.getElementById('game-message').textContent=m; }
+function updateStats(){
+  document.getElementById('stat-score').textContent=score.toLocaleString();
+  document.getElementById('stat-level').textContent=level;
+  document.getElementById('stat-lines').textContent=lines;
+  document.getElementById('stat-best').textContent=Math.max(sess.best,score).toLocaleString();
+  document.getElementById('c-tetrises').textContent=tetrises;
+  document.getElementById('c-pieces').textContent=pieces;
+  document.getElementById('c-harddrops').textContent=hardDrops;
+  const prog=lines%10;
+  document.getElementById('c-progress').textContent=prog+'/10 to next';
+  document.getElementById('c-progbar').style.width=(prog*10)+'%';
+}
+
+// ═══════════════════════════════════════════════════════════
+//  INPUT
+// ═══════════════════════════════════════════════════════════
+let dasTimer=null, arrTimer=null;
+const DAS=150, ARR=30;
+
+function moveLeft(){
+  if(!gameActive||paused||isClearing) return;
+  if(validPos(cur.type,cur.rot,cur.x-1,cur.y)){ cur.x--; resetLockDelay(); }
+  draw();
+}
+function moveRight(){
+  if(!gameActive||paused||isClearing) return;
+  if(validPos(cur.type,cur.rot,cur.x+1,cur.y)){ cur.x++; resetLockDelay(); }
+  draw();
+}
+
+// Soft drop: moves piece one cell down.
+// If it can't move further, we just start the lock delay — NOT instant lock.
+// This lets the player slide the piece along the bottom row.
+function softDrop(){
+  if(!gameActive||paused||isClearing) return;
+  if(validPos(cur.type,cur.rot,cur.x,cur.y+1)){
+    cur.y++;
+    score+=1;
+    // If we were on ground and moved down, cancel lock delay
+    if(isOnGround) cancelLockDelay();
+  } else {
+    // Already at bottom — just make sure lock delay is running
+    startLockDelay();
+  }
+  draw(); updateStats();
+}
+
+// Hard drop: instantly slams piece to bottom, then locks immediately (no delay).
+function hardDrop(){
+  if(!gameActive||paused||isClearing) return;
+  cancelLockDelay();
+  const gy=ghostY();
+  score+=( gy-cur.y)*2; hardDrops++;
+  cur.y=gy;
+  hardDropFlash=true; draw();
+  setTimeout(()=>{ hardDropFlash=false; lockPiece(); draw(); updateStats(); }, 60);
+}
+
+document.addEventListener('keydown', e=>{
+  if(e.code==='KeyP'){ if(gameActive&&!gameOver) togglePause(); return; }
+  if(!gameActive||gameOver||paused) return;
+  switch(e.code){
+    case 'ArrowLeft':
+      e.preventDefault(); moveLeft();
+      clearTimeout(dasTimer); clearInterval(arrTimer);
+      dasTimer=setTimeout(()=>{ arrTimer=setInterval(moveLeft,ARR); }, DAS);
+      break;
+    case 'ArrowRight':
+      e.preventDefault(); moveRight();
+      clearTimeout(dasTimer); clearInterval(arrTimer);
+      dasTimer=setTimeout(()=>{ arrTimer=setInterval(moveRight,ARR); }, DAS);
+      break;
+    case 'ArrowUp':   e.preventDefault(); if(!isClearing){ tryRotate(1); draw(); } break;
+    case 'KeyZ':      e.preventDefault(); if(!isClearing){ tryRotate(-1); draw(); } break;
+    case 'ArrowDown': e.preventDefault(); softDrop(); break;
+    case 'Space':     e.preventDefault(); hardDrop(); break;
+    case 'KeyC':      e.preventDefault(); holdAction(); break;
+  }
+});
+document.addEventListener('keyup', e=>{
+  if(e.code==='ArrowLeft'||e.code==='ArrowRight'){
+    clearTimeout(dasTimer); clearInterval(arrTimer);
+  }
+});
+window.addEventListener('resize', ()=>{ resizeCanvas(); draw(); });
+
+requestAnimationFrame(()=>requestAnimationFrame(newGame));
+</script>
+</body>
+</html>

@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Atar Noder Neder | BlackJack</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        "primary": "#006d36", "on-primary": "#ffffff",
+        "primary-container": "#50c878", "on-primary-container": "#005025",
+        "secondary": "#516169", "secondary-container": "#d2e2ec",
+        "on-secondary-container": "#55656d",
+        "surface": "#f7f9fb", "surface-container": "#eceef0",
+        "on-surface": "#191c1e", "on-surface-variant": "#3e4a3f",
+        "outline": "#6e7a6e", "outline-variant": "#bdcabc",
+        "background": "#f7f9fb",
+      },
+      fontFamily: { "body": ["Plus Jakarta Sans"] },
+    },
+  },
+}
+</script>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: 'Plus Jakarta Sans', sans-serif; }
+  .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+  .hide-scrollbar::-webkit-scrollbar { display: none; }
+  .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  .glass-panel { background: rgba(255,255,255,0.65); backdrop-filter: blur(14px); border: 1px solid rgba(226,232,240,0.9); }
+
+  .card {
+    width: 70px; height: 105px;
+    border-radius: 10px; background: white;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.1);
+    display: flex; flex-direction: column; padding: 6px;
+    flex-shrink: 0; animation: dealCard 0.28s ease-out;
+  }
+  .card.face-down {
+    background: linear-gradient(135deg, #006d36, #004d26);
+    border: 2px solid white;
+  }
+  .card.face-down::after {
+    content:''; position:absolute; inset:5px;
+    border:1.5px solid rgba(255,255,255,0.2); border-radius:5px;
+    background: repeating-linear-gradient(45deg,transparent,transparent 4px,rgba(255,255,255,0.05) 4px,rgba(255,255,255,0.05) 8px);
+  }
+  .card { position: relative; }
+  .card.red { color: #dc2626; }
+  .card.black { color: #191c1e; }
+  .c-rank { font-size:14px; font-weight:900; line-height:1; }
+  .c-suit  { font-size:10px; line-height:1; }
+  .c-mid   { flex:1; display:flex; align-items:center; justify-content:center; font-size:26px; }
+  @keyframes dealCard { from{opacity:0;transform:translateY(-14px) scale(0.88)} to{opacity:1;transform:none} }
+
+  .action-btn {
+    flex:1; padding:11px 6px; border-radius:14px;
+    font-weight:900; font-size:13px; letter-spacing:0.04em; text-transform:uppercase;
+    transition:all 0.15s; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; gap:5px; border:none;
+  }
+  .action-btn:active{transform:scale(0.96);}
+  .action-btn:disabled{opacity:0.35;cursor:not-allowed;transform:none!important;}
+  .btn-hit   {background:#006d36;color:#fff;box-shadow:0 4px 12px rgba(0,109,54,0.35);}
+  .btn-hit:hover:not(:disabled)   {background:#005a2c;transform:translateY(-2px);}
+  .btn-stand {background:#f1f5f9;color:#374151;}
+  .btn-stand:hover:not(:disabled) {background:#e2e8f0;transform:translateY(-2px);}
+  .btn-double{background:#1d4ed8;color:#fff;box-shadow:0 4px 12px rgba(29,78,216,0.3);}
+  .btn-double:hover:not(:disabled){background:#1e40af;transform:translateY(-2px);}
+  .btn-deal  {background:#006d36;color:#fff;box-shadow:0 4px 12px rgba(0,109,54,0.3);width:100%;}
+  .btn-deal:hover{background:#005a2c;transform:translateY(-1px);}
+  .btn-next  {background:#006d36;color:#fff;box-shadow:0 4px 12px rgba(0,109,54,0.3);width:100%;}
+  .btn-next:hover{background:#005a2c;transform:translateY(-1px);}
+
+  .score-badge {
+    display:inline-flex; align-items:center; justify-content:center;
+    min-width:34px; height:24px; background:#006d36; color:#fff;
+    border-radius:999px; font-size:11px; font-weight:900; padding:0 8px;
+    transition:all 0.3s;
+  }
+  .score-badge.bust{background:#dc2626;}
+  .score-badge.blackjack{background:#d97706;}
+  .score-badge.twenty-one{background:#7c3aed;}
+
+  .result-banner {
+    display:none; position:absolute; inset:0; border-radius:24px;
+    align-items:center; justify-content:center; flex-direction:column; gap:6px;
+    z-index:10; animation:fadeIn 0.3s ease;
+  }
+  .result-banner.show{display:flex;}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+
+  .chip {
+    width:42px; height:42px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:900; font-size:10px; cursor:pointer;
+    border:3px dashed rgba(255,255,255,0.55);
+    transition:all 0.15s; box-shadow:0 3px 8px rgba(0,0,0,0.18);
+    user-select:none;
+  }
+  .chip:hover  {transform:scale(1.12) translateY(-2px);}
+  .chip:active {transform:scale(0.94);}
+  .chip-5  {background:#dc2626;color:#fff;}
+  .chip-10 {background:#1d4ed8;color:#fff;}
+  .chip-25 {background:#059669;color:#fff;}
+  .chip-50 {background:#7c3aed;color:#fff;}
+  .chip-100{background:#d97706;color:#fff;}
+
+  .bet-box {
+    min-height:40px; background:rgba(0,109,54,0.07);
+    border:1.5px dashed #86efac; border-radius:12px;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:900; font-size:17px; color:#006d36;
+  }
+  .hand-area {
+    min-height:115px; display:flex; align-items:center;
+    justify-content:center; flex-wrap:wrap; gap:6px;
+  }
+  .hand-sec {
+    border-radius:14px; padding:10px 14px;
+    display:flex; flex-direction:column; align-items:center; gap:8px; width:100%;
+  }
+  .hand-sec.dealer-bg{background:rgba(248,250,252,0.9);}
+  .hand-sec.player-bg{background:rgba(240,253,244,0.9);}
+  .bar-fill{transition:width 0.5s ease;}
+</style>
+</head>
+<body class="bg-background text-on-surface h-screen overflow-hidden flex">
+<div class="flex h-screen overflow-hidden">
+<!-- Sidebar -->
+  <aside dir="ltr" class="fixed left-0 top-0 h-full flex flex-col p-5 z-40 bg-slate-200 w-64 rounded-r-[32px] shadow-xl font-['Plus_Jakarta_Sans'] text-sm font-medium">
+    <div class="mb-8 px-2">
+      <h1 class="text-lg font-black text-emerald-800 tracking-tighter">Atar Noder Neder</h1>
+      <p class="text-slate-500 text-xs">Elite Member</p>
+    </div>
+    <nav class="flex-1 space-y-2">
+      <a href="index.html" class="flex items-center gap-3 px-4 py-2 text-slate-600 rounded-2xl hover:bg-slate-100 transition-colors">
+        <span class="material-symbols-outlined text-base">arrow_back</span><span>Go back to Lobby</span>
+      </a>
+      <a href="wordle.html" class="flex items-center gap-3 px-4 py-2 text-slate-600 rounded-2xl hover:bg-slate-100 transition-colors">
+        <span class="material-symbols-outlined text-base">match_word</span><span>Wordle</span>
+      </a>
+      <a href="yahtzee.html" class="flex items-center gap-3 px-4 py-2 text-slate-600 rounded-2xl hover:bg-slate-100 transition-colors">
+        <span class="material-symbols-outlined text-base">casino</span><span>Yahtzee</span>
+      </a>
+      <a href="minesweeper.html" class="flex items-center gap-3 px-4 py-2 text-slate-600 rounded-2xl hover:bg-slate-100 transition-colors">
+        <span class="material-symbols-outlined text-base" style="font-variation-settings:'FILL' 1;">brightness_high</span><span>Minesweeper</span>
+      </a>
+      <a href="blackjack.html" class="flex items-center gap-3 px-4 py-2 bg-white text-emerald-700 rounded-2xl shadow-sm">
+        <span class="material-symbols-outlined text-base" style="font-variation-settings:'FILL' 1;">playing_cards</span><span>BlackJack</span>
+      </a>
+      <a href="bubbleshooter.html" class="flex flex-row items-center justify-start gap-3 px-4 py-2 text-slate-600 rounded-2xl hover:bg-slate-100 transition-colors w-full text-left">
+        <span class="material-symbols-outlined text-base" style="font-variation-settings:'FILL' 1;">bubble_chart</span>
+        <span>Bubble Shooter</span>
+      </a>
+      <a href="tetris.html" class="flex flex-row items-center gap-3 px-4 py-2 text-slate-600 rounded-2xl hover:bg-slate-100 transition-colors w-full text-left">
+        <span class="material-symbols-outlined text-base" style="font-variation-settings:'FILL' 1;">view_agenda</span>
+        <span>Tetris</span>
+      </a>
+    </nav>
+  </aside>
+</div>
+<!-- Main -->
+<main class="ml-64 flex-1 min-w-0 flex flex-col h-screen overflow-hidden">
+  <header dir="rtl" class="flex justify-between items-center w-full px-6 h-16 bg-white/70 backdrop-blur-xl sticky top-0 z-30 shrink-0 border-b border-slate-100">
+      <div class="w-full max-w-7xl flex justify-between items-center px-12">
+          <div class="flex items-center gap-3 text-primary font-bold">
+              <span class="material-symbols-outlined">playing_cards</span>
+              <span class="text-lg">BlackJack</span>
+          </div>
+          <div id="game-message" class="text-sm font-bold text-emerald-700"></div>
+          <div class="text-sm font-bold text-emerald-900">Atar Noder Neder - funded by AIPAC</div>
+      </div>
+  </header>
+
+  <div class="flex-1 p-4 grid grid-cols-12 gap-4 overflow-hidden min-h-0">
+
+    <!-- LEFT: How to Play -->
+    <aside class="col-span-3 glass-panel rounded-[28px] p-5 flex flex-col gap-3 overflow-y-auto hide-scrollbar">
+      <div class="flex items-center gap-2 text-emerald-800 font-black uppercase text-xs">
+        <span class="material-symbols-outlined text-sm">help_outline</span><span>How to Play</span>
+      </div>
+      <div class="flex flex-col gap-3">
+        <div class="flex gap-2"><div class="w-6 h-6 shrink-0 rounded-full bg-primary flex items-center justify-center text-[10px] font-black text-white">1</div><div><p class="text-xs font-bold mb-0.5">Place Your Bet</p><p class="text-[11px] leading-relaxed text-on-surface-variant">Click chips to build your bet, then hit <span class="font-bold text-primary">Deal</span>. You start with $500.</p></div></div>
+        <div class="flex gap-2"><div class="w-6 h-6 shrink-0 rounded-full bg-primary flex items-center justify-center text-[10px] font-black text-white">2</div><div><p class="text-xs font-bold mb-0.5">Beat the Dealer</p><p class="text-[11px] leading-relaxed text-on-surface-variant">Get closer to <span class="font-bold">21</span> than the dealer without going over (busting).</p></div></div>
+        <div class="flex gap-2"><div class="w-6 h-6 shrink-0 rounded-full bg-primary flex items-center justify-center text-[10px] font-black text-white">3</div><div><p class="text-xs font-bold mb-0.5">Hit or Stand</p><p class="text-[11px] leading-relaxed text-on-surface-variant"><span class="font-bold">Hit</span> to take a card. <span class="font-bold">Stand</span> to hold your hand and let the dealer play.</p></div></div>
+        <div class="flex gap-2"><div class="w-6 h-6 shrink-0 rounded-full bg-primary flex items-center justify-center text-[10px] font-black text-white">4</div><div><p class="text-xs font-bold mb-0.5">Double Down</p><p class="text-[11px] leading-relaxed text-on-surface-variant">Available on your first 2 cards — double your bet and receive exactly 1 more card.</p></div></div>
+        <div class="flex gap-2"><div class="w-6 h-6 shrink-0 rounded-full bg-primary flex items-center justify-center text-[10px] font-black text-white">5</div><div><p class="text-xs font-bold mb-0.5">Dealer Rules</p><p class="text-[11px] leading-relaxed text-on-surface-variant">Dealer <span class="font-bold">must hit on 16 or less</span> and stand on 17+. Always plays after you.</p></div></div>
+      </div>
+      <hr class="border-slate-200"/>
+      <div>
+        <p class="text-[10px] font-black uppercase tracking-widest text-emerald-800 mb-2">Card Values</p>
+        <div class="flex flex-col gap-1.5">
+          <div class="flex justify-between items-center bg-slate-50 rounded-xl px-3 py-1.5"><span class="text-xs font-bold">2 – 10</span><span class="text-[11px] text-on-surface-variant">Face value</span></div>
+          <div class="flex justify-between items-center bg-slate-50 rounded-xl px-3 py-1.5"><span class="text-xs font-bold">J · Q · K</span><span class="text-[11px] text-on-surface-variant">10 points</span></div>
+          <div class="flex justify-between items-center bg-amber-50 rounded-xl px-3 py-1.5"><span class="text-xs font-bold text-amber-800">Ace</span><span class="text-[11px] text-amber-700">1 or 11 (auto-optimal)</span></div>
+        </div>
+      </div>
+      <hr class="border-slate-200"/>
+      <div>
+        <p class="text-[10px] font-black uppercase tracking-widest text-emerald-800 mb-2">Payouts</p>
+        <div class="flex flex-col gap-1.5">
+          <div class="flex justify-between items-center bg-emerald-50 rounded-xl px-3 py-1.5"><span class="text-xs font-bold text-emerald-800">🃏 Blackjack</span><span class="text-[11px] font-bold text-emerald-700">3:2</span></div>
+          <div class="flex justify-between items-center bg-slate-50 rounded-xl px-3 py-1.5"><span class="text-xs font-bold">Win</span><span class="text-[11px] font-bold">1:1</span></div>
+          <div class="flex justify-between items-center bg-slate-50 rounded-xl px-3 py-1.5"><span class="text-xs font-bold">Push (Tie)</span><span class="text-[11px] text-on-surface-variant">Bet returned</span></div>
+        </div>
+      </div>
+      <hr class="border-slate-200"/>
+      <div>
+        <p class="text-[10px] font-black uppercase tracking-widest text-emerald-800 mb-2">Pro Tips</p>
+        <ul class="flex flex-col gap-1.5">
+          <li class="flex gap-2 text-[11px] text-on-surface-variant leading-relaxed"><span class="text-emerald-500 font-black shrink-0">→</span>Always hit on 11 or less — can't bust.</li>
+          <li class="flex gap-2 text-[11px] text-on-surface-variant leading-relaxed"><span class="text-emerald-500 font-black shrink-0">→</span>Stand on hard 17+.</li>
+          <li class="flex gap-2 text-[11px] text-on-surface-variant leading-relaxed"><span class="text-emerald-500 font-black shrink-0">→</span>Double on 10 or 11 vs. dealer low card.</li>
+          <li class="flex gap-2 text-[11px] text-on-surface-variant leading-relaxed"><span class="text-emerald-500 font-black shrink-0">→</span>Assume dealer's hidden card is a 10.</li>
+        </ul>
+      </div>
+    </aside>
+
+    <!-- CENTER: Game -->
+    <section class="col-span-6 flex flex-col gap-3 min-h-0">
+
+      <!-- Stats bar -->
+      <div class="glass-panel rounded-2xl px-5 py-2.5 flex items-center gap-4 justify-between shrink-0">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-sm text-emerald-600" style="font-variation-settings:'FILL' 1;">account_balance_wallet</span>
+          <div>
+            <p class="text-[9px] font-black uppercase text-on-surface-variant">Balance</p>
+            <p id="balance-display" class="text-base font-black text-on-surface leading-none">$500</p>
+          </div>
+        </div>
+        <div class="w-px h-6 bg-slate-200"></div>
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-sm text-amber-500" style="font-variation-settings:'FILL' 1;">toll</span>
+          <div>
+            <p class="text-[9px] font-black uppercase text-on-surface-variant">Bet</p>
+            <p id="bet-display" class="text-base font-black text-on-surface leading-none">$0</p>
+          </div>
+        </div>
+        <div class="w-px h-6 bg-slate-200"></div>
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-sm text-slate-500">casino</span>
+          <div>
+            <p class="text-[9px] font-black uppercase text-on-surface-variant">Hands</p>
+            <p id="hands-display" class="text-base font-black text-on-surface leading-none">0</p>
+          </div>
+        </div>
+        <div class="w-px h-6 bg-slate-200"></div>
+        <button onclick="clearBet()" class="flex items-center gap-1 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-full text-xs font-bold transition-colors">
+          <span class="material-symbols-outlined text-sm">undo</span>Clear
+        </button>
+      </div>
+
+      <!-- Card table — flex-1 takes remaining space -->
+      <div class="glass-panel rounded-[24px] flex-1 flex flex-col min-h-0 relative overflow-hidden">
+        <div class="result-banner" id="result-banner">
+          <div class="text-5xl" id="result-emoji"></div>
+          <div class="text-2xl font-black text-white" id="result-title"></div>
+          <div class="text-sm font-bold text-white/80" id="result-subtitle"></div>
+        </div>
+        <div class="flex-1 flex flex-col justify-around p-4 min-h-0">
+          <!-- Dealer -->
+          <div class="hand-sec dealer-bg">
+            <div class="flex items-center justify-between w-full">
+              <span class="text-[9px] font-black uppercase tracking-widest text-on-surface-variant">Dealer's Hand</span>
+              <span class="score-badge" id="dealer-score-badge">—</span>
+            </div>
+            <div class="hand-area" id="dealer-hand"></div>
+          </div>
+          <div class="flex items-center gap-3 px-2">
+            <div class="h-px flex-1 bg-slate-200"></div>
+            <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">vs</span>
+            <div class="h-px flex-1 bg-slate-200"></div>
+          </div>
+          <!-- Player -->
+          <div class="hand-sec player-bg">
+            <div class="flex items-center justify-between w-full">
+              <span class="text-[9px] font-black uppercase tracking-widest text-on-surface-variant">Your Hand</span>
+              <span class="score-badge" id="player-score-badge">—</span>
+            </div>
+            <div class="hand-area" id="player-hand"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action area — FIXED HEIGHT, always visible -->
+      <div class="glass-panel rounded-[20px] px-5 py-4 shrink-0">
+
+        <!-- BET PHASE -->
+        <div id="bet-phase">
+          <div class="flex items-center justify-between mb-2">
+            <p class="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">Place Your Bet</p>
+            <div class="bet-box w-20 text-base" id="bet-chip-area">$0</div>
+          </div>
+          <div class="flex gap-2.5 justify-center mb-3">
+            <div class="chip chip-5"   onclick="addBet(5)">$5</div>
+            <div class="chip chip-10"  onclick="addBet(10)">$10</div>
+            <div class="chip chip-25"  onclick="addBet(25)">$25</div>
+            <div class="chip chip-50"  onclick="addBet(50)">$50</div>
+            <div class="chip chip-100" onclick="addBet(100)">$100</div>
+          </div>
+          <button onclick="deal()" id="deal-btn" class="action-btn btn-deal py-3 rounded-2xl text-sm">
+            <span class="material-symbols-outlined text-base">playing_cards</span> Deal Cards
+          </button>
+        </div>
+
+        <!-- PLAY PHASE -->
+        <div id="play-phase" class="flex gap-3 hidden">
+          <button class="action-btn btn-hit"    id="hit-btn"    onclick="hit()"><span class="material-symbols-outlined text-base">add</span>Hit</button>
+          <button class="action-btn btn-stand"  id="stand-btn"  onclick="stand()"><span class="material-symbols-outlined text-base">pan_tool</span>Stand</button>
+          <button class="action-btn btn-double" id="double-btn" onclick="doubleDown()"><span class="material-symbols-outlined text-base">exposure_plus_2</span>Double</button>
+        </div>
+
+        <!-- RESULT PHASE -->
+        <div id="result-phase" class="hidden">
+          <button onclick="newHand()" class="action-btn btn-next py-3 rounded-2xl text-sm">
+            <span class="material-symbols-outlined text-base">refresh</span>Next Hand
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- RIGHT: Stats -->
+    <aside class="col-span-3 glass-panel rounded-[28px] p-5 flex flex-col gap-3 overflow-y-auto hide-scrollbar">
+      <div class="flex items-center gap-2 text-emerald-800 font-black uppercase text-xs">
+        <span class="material-symbols-outlined text-sm">bar_chart</span><span>Session Stats</span>
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <div class="bg-emerald-50 rounded-2xl p-3 text-center"><p id="stat-hands" class="text-2xl font-black text-emerald-800">0</p><p class="text-[9px] font-bold uppercase tracking-wider text-on-surface-variant">Hands</p></div>
+        <div class="bg-emerald-50 rounded-2xl p-3 text-center"><p id="stat-wins" class="text-2xl font-black text-emerald-800">0</p><p class="text-[9px] font-bold uppercase tracking-wider text-on-surface-variant">Wins</p></div>
+        <div class="bg-emerald-50 rounded-2xl p-3 text-center"><p id="stat-winpct" class="text-2xl font-black text-emerald-800">—</p><p class="text-[9px] font-bold uppercase tracking-wider text-on-surface-variant">Win %</p></div>
+        <div class="bg-emerald-50 rounded-2xl p-3 text-center"><p id="stat-blackjacks" class="text-2xl font-black text-emerald-800">0</p><p class="text-[9px] font-bold uppercase tracking-wider text-on-surface-variant">Blackjacks</p></div>
+      </div>
+      <hr class="border-slate-200"/>
+      <div>
+        <p class="text-[10px] font-black uppercase tracking-widest text-emerald-800 mb-2">Results Breakdown</p>
+        <div class="flex flex-col gap-1.5">
+          <div class="flex items-center gap-2"><span class="text-[10px] font-black text-emerald-600 w-4">W</span><div class="flex-1 h-3 bg-slate-100 rounded-full overflow-hidden"><div id="bar-wins" class="h-full bg-emerald-500 rounded-full bar-fill" style="width:0%"></div></div><span id="cnt-wins" class="text-[10px] font-black text-on-surface-variant w-4 text-right">0</span></div>
+          <div class="flex items-center gap-2"><span class="text-[10px] font-black text-red-500 w-4">L</span><div class="flex-1 h-3 bg-slate-100 rounded-full overflow-hidden"><div id="bar-losses" class="h-full bg-red-400 rounded-full bar-fill" style="width:0%"></div></div><span id="cnt-losses" class="text-[10px] font-black text-on-surface-variant w-4 text-right">0</span></div>
+          <div class="flex items-center gap-2"><span class="text-[10px] font-black text-slate-400 w-4">P</span><div class="flex-1 h-3 bg-slate-100 rounded-full overflow-hidden"><div id="bar-pushes" class="h-full bg-slate-400 rounded-full bar-fill" style="width:0%"></div></div><span id="cnt-pushes" class="text-[10px] font-black text-on-surface-variant w-4 text-right">0</span></div>
+        </div>
+      </div>
+      <hr class="border-slate-200"/>
+      <div>
+        <p class="text-[10px] font-black uppercase tracking-widest text-emerald-800 mb-2">Current Hand</p>
+        <div class="flex flex-col gap-1.5">
+          <div class="flex justify-between"><span class="text-xs font-bold text-on-surface-variant">Your score</span><span id="curr-player-score" class="text-xs font-black text-emerald-800">—</span></div>
+          <div class="flex justify-between"><span class="text-xs font-bold text-on-surface-variant">Dealer shows</span><span id="curr-dealer-shows" class="text-xs font-black">—</span></div>
+          <div class="flex justify-between"><span class="text-xs font-bold text-on-surface-variant">Current bet</span><span id="curr-bet-live" class="text-xs font-black text-amber-600">$0</span></div>
+          <div class="flex justify-between"><span class="text-xs font-bold text-on-surface-variant">Cards dealt</span><span id="curr-cards" class="text-xs font-black">—</span></div>
+        </div>
+      </div>
+      <hr class="border-slate-200"/>
+      <div>
+        <p class="text-[10px] font-black uppercase tracking-widest text-emerald-800 mb-2">Session P&L</p>
+        <div class="flex flex-col gap-1.5">
+          <div class="flex justify-between"><span class="text-xs font-bold text-on-surface-variant">Started with</span><span class="text-xs font-black">$500</span></div>
+          <div class="flex justify-between"><span class="text-xs font-bold text-on-surface-variant">Balance</span><span id="curr-balance-stat" class="text-xs font-black">$500</span></div>
+          <div class="flex justify-between"><span class="text-xs font-bold text-on-surface-variant">Net profit</span><span id="net-profit" class="text-xs font-black text-emerald-600">$0</span></div>
+        </div>
+      </div>
+      <hr class="border-slate-200"/>
+      <div>
+        <p class="text-[10px] font-black uppercase tracking-widest text-emerald-800 mb-2">Streaks</p>
+        <div class="flex flex-col gap-1.5">
+          <div class="flex justify-between"><span class="text-xs font-bold text-on-surface-variant">Current</span><span id="curr-streak" class="text-xs font-black">—</span></div>
+          <div class="flex justify-between"><span class="text-xs font-bold text-on-surface-variant">Best win streak</span><span id="best-streak" class="text-xs font-black text-emerald-700">0</span></div>
+          <div class="flex justify-between"><span class="text-xs font-bold text-on-surface-variant">Biggest win</span><span id="biggest-win" class="text-xs font-black text-emerald-700">$0</span></div>
+        </div>
+      </div>
+      <button onclick="resetGame()" class="mt-auto px-5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-full font-bold text-xs uppercase tracking-widest transition-colors shrink-0">
+        Reset Session
+      </button>
+    </aside>
+  </div>
+</main>
+
+<script>
+// ═══════════ DECK ═══════════
+const SUITS = ['♠','♥','♦','♣'];
+const RANKS = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+const RED = new Set(['♥','♦']);
+let deck = [];
+
+function buildDeck() {
+  deck = [];
+  for (let d = 0; d < 6; d++)
+    for (const s of SUITS) for (const r of RANKS) deck.push({suit:s,rank:r});
+  for (let i = deck.length-1; i > 0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [deck[i],deck[j]] = [deck[j],deck[i]];
+  }
+}
+function draw() { if (deck.length < 60) buildDeck(); return deck.pop(); }
+
+function val(hand) {
+  let t=0, a=0;
+  for (const c of hand) {
+    if (c.rank==='A'){t+=11;a++;}
+    else if ('JQK'.includes(c.rank)) t+=10;
+    else t+=parseInt(c.rank);
+  }
+  while(t>21&&a>0){t-=10;a--;}
+  return t;
+}
+function isSoft17(hand) {
+  if (val(hand)!==17) return false;
+  let t=0,a=0;
+  for(const c of hand){if(c.rank==='A'){t+=11;a++;}else if('JQK'.includes(c.rank))t+=10;else t+=parseInt(c.rank);}
+  return a>0&&t===17;
+}
+function isBJ(hand){ return hand.length===2&&val(hand)===21; }
+
+// ═══════════ STATE ═══════════
+let balance=500, bet=0, playerHand=[], dealerHand=[], phase='bet', holeHidden=true;
+let stats={hands:0,wins:0,losses:0,pushes:0,blackjacks:0,curStreak:0,curStreakType:null,bestStreak:0,bigWin:0};
+
+// ═══════════ BET ═══════════
+function addBet(n) {
+  if(phase!=='bet') return;
+  if(bet+n>balance){flash("Not enough balance!");return;}
+  bet+=n; syncBet();
+}
+function clearBet(){ if(phase!=='bet')return; bet=0; syncBet(); }
+function syncBet(){
+  document.getElementById('bet-display').textContent='$'+bet;
+  document.getElementById('bet-chip-area').textContent='$'+bet;
+  document.getElementById('curr-bet-live').textContent='$'+bet;
+  document.getElementById('deal-btn').disabled=bet===0;
+}
+
+// ═══════════ DEAL ═══════════
+function deal(){
+  if(bet===0){flash("Place a bet first!");return;}
+  balance-=bet;
+  document.getElementById('balance-display').textContent='$'+balance;
+  playerHand=[draw(),draw()]; dealerHand=[draw(),draw()]; holeHidden=true;
+  phase='play'; showPhase('play'); renderHands(); updateLive();
+  document.getElementById('double-btn').disabled=bet>balance;
+  if(isBJ(playerHand)){
+    holeHidden=false; renderHands();
+    if(isBJ(dealerHand)) endHand('push');
+    else { stats.blackjacks++; endHand('blackjack'); }
+    return;
+  }
+  flash("Hit, Stand, or Double?");
+}
+
+// ═══════════ ACTIONS ═══════════
+function hit(){
+  if(phase!=='play')return;
+  playerHand.push(draw());
+  document.getElementById('double-btn').disabled=true;
+  renderHands(); updateLive();
+  const v=val(playerHand);
+  if(v>21){holeHidden=false;renderHands();endHand('bust');}
+  else if(v===21) stand();
+}
+function stand(){
+  if(phase!=='play')return;
+  holeHidden=false; renderHands(); dealerTurn();
+}
+function doubleDown(){
+  if(phase!=='play'||bet>balance){flash("Not enough balance!");return;}
+  balance-=bet; bet*=2; syncBet();
+  document.getElementById('balance-display').textContent='$'+balance;
+  ['hit-btn','stand-btn','double-btn'].forEach(id=>document.getElementById(id).disabled=true);
+  playerHand.push(draw()); holeHidden=false; renderHands(); updateLive();
+  if(val(playerHand)>21) endHand('bust'); else dealerTurn();
+}
+
+// ═══════════ DEALER ═══════════
+function dealerTurn(){
+  function step(){
+    if(val(dealerHand)<17||isSoft17(dealerHand)){
+      dealerHand.push(draw()); renderHands(); setTimeout(step,380);
+    } else settle();
+  }
+  setTimeout(step,280);
+}
+function settle(){
+  const p=val(playerHand),d=val(dealerHand);
+  if(d>21) endHand('dealer-bust');
+  else if(p>d) endHand('win');
+  else if(d>p) endHand('lose');
+  else endHand('push');
+}
+
+// ═══════════ END ═══════════
+function endHand(outcome){
+  phase='result'; stats.hands++;
+  let payout=0,emoji='',title='',sub='',bg='';
+  switch(outcome){
+    case 'blackjack': payout=Math.floor(bet*2.5); emoji='🃏'; title='Blackjack!'; sub=`+$${payout-bet} (3:2)`; bg='rgba(217,119,6,0.9)'; stats.wins++; doStreak('win'); if(payout-bet>stats.bigWin)stats.bigWin=payout-bet; break;
+    case 'win': case 'dealer-bust': payout=bet*2; emoji=outcome==='dealer-bust'?'💥':'🎉'; title=outcome==='dealer-bust'?'Dealer Busts!':'You Win!'; sub=`+$${bet}`; bg='rgba(0,109,54,0.9)'; stats.wins++; doStreak('win'); if(bet>stats.bigWin)stats.bigWin=bet; break;
+    case 'bust': payout=0; emoji='💸'; title='Bust!'; sub=`-$${bet}`; bg='rgba(185,28,28,0.9)'; stats.losses++; doStreak('loss'); break;
+    case 'lose': payout=0; emoji='😔'; title='Dealer Wins'; sub=`-$${bet}`; bg='rgba(185,28,28,0.9)'; stats.losses++; doStreak('loss'); break;
+    case 'push': payout=bet; emoji='🤝'; title='Push!'; sub='Bet returned'; bg='rgba(71,85,105,0.9)'; stats.pushes++; break;
+  }
+  balance+=payout;
+  showResult(emoji,title,sub,bg);
+  showPhase('result');
+  updateAllStats(); updateLive();
+  document.getElementById('balance-display').textContent='$'+balance;
+  document.getElementById('hands-display').textContent=stats.hands;
+  if(balance<=0) setTimeout(()=>{flash("Out of chips! Resetting...");setTimeout(resetGame,1800);},800);
+}
+function doStreak(t){
+  if(stats.curStreakType===t) stats.curStreak++;
+  else{stats.curStreakType=t;stats.curStreak=1;}
+  if(t==='win'&&stats.curStreak>stats.bestStreak)stats.bestStreak=stats.curStreak;
+}
+
+// ═══════════ NEW HAND ═══════════
+function newHand(){
+  bet=0;phase='bet';playerHand=[];dealerHand=[];holeHidden=true;
+  document.getElementById('dealer-hand').innerHTML='';
+  document.getElementById('player-hand').innerHTML='';
+  document.getElementById('dealer-score-badge').textContent='—';
+  document.getElementById('dealer-score-badge').className='score-badge';
+  document.getElementById('player-score-badge').textContent='—';
+  document.getElementById('player-score-badge').className='score-badge';
+  document.getElementById('result-banner').classList.remove('show');
+  ['hit-btn','stand-btn','double-btn'].forEach(id=>document.getElementById(id).disabled=false);
+  showPhase('bet'); syncBet();
+  document.getElementById('curr-player-score').textContent='—';
+  document.getElementById('curr-dealer-shows').textContent='—';
+  document.getElementById('curr-cards').textContent='—';
+  flash("Place your bet!");
+}
+function resetGame(){
+  balance=500; stats={hands:0,wins:0,losses:0,pushes:0,blackjacks:0,curStreak:0,curStreakType:null,bestStreak:0,bigWin:0};
+  document.getElementById('balance-display').textContent='$500';
+  buildDeck(); newHand(); updateAllStats();
+}
+
+// ═══════════ RENDER ═══════════
+function renderHands(){
+  renderEl(document.getElementById('dealer-hand'), dealerHand, holeHidden);
+  renderEl(document.getElementById('player-hand'), playerHand, false);
+  const pv=val(playerHand);
+  const dv=holeHidden?val([dealerHand[0]]):val(dealerHand);
+  setBadge('player-score-badge',pv,playerHand,false);
+  setBadge('dealer-score-badge',dv,holeHidden?[dealerHand[0]]:dealerHand,holeHidden);
+}
+function setBadge(id,v,hand,hidden){
+  const el=document.getElementById(id);
+  el.className='score-badge';
+  el.textContent=hidden?v+'+?':v;
+  if(!hidden){
+    if(v>21)el.classList.add('bust');
+    else if(isBJ(hand))el.classList.add('blackjack');
+    else if(v===21)el.classList.add('twenty-one');
+  }
+}
+function renderEl(container,hand,hideSecond){
+  container.innerHTML='';
+  hand.forEach((card,i)=>{
+    const el=document.createElement('div');
+    if(hideSecond&&i===1){el.className='card face-down';}
+    else{
+      el.className='card '+(RED.has(card.suit)?'red':'black');
+      el.innerHTML=`<div style="display:flex;justify-content:space-between"><div style="line-height:1.1"><div class="c-rank">${card.rank}</div><div class="c-suit">${card.suit}</div></div></div><div class="c-mid">${card.suit}</div><div style="display:flex;justify-content:flex-end"><div style="line-height:1.1;transform:rotate(180deg)"><div class="c-rank">${card.rank}</div><div class="c-suit">${card.suit}</div></div></div>`;
+    }
+    container.appendChild(el);
+  });
+}
+
+// ═══════════ UI ═══════════
+function showPhase(p){
+  document.getElementById('bet-phase').classList.toggle('hidden',p!=='bet');
+  document.getElementById('play-phase').classList.toggle('hidden',p!=='play');
+  document.getElementById('result-phase').classList.toggle('hidden',p!=='result');
+}
+function showResult(emoji,title,sub,bg){
+  const b=document.getElementById('result-banner');
+  b.style.background=bg; b.style.backdropFilter='blur(5px)';
+  document.getElementById('result-emoji').textContent=emoji;
+  document.getElementById('result-title').textContent=title;
+  document.getElementById('result-subtitle').textContent=sub;
+  b.classList.add('show');
+}
+function flash(msg){ document.getElementById('game-message').textContent=msg; }
+
+function updateLive(){
+  if(phase==='bet')return;
+  document.getElementById('curr-player-score').textContent=val(playerHand);
+  document.getElementById('curr-dealer-shows').textContent=holeHidden&&dealerHand[0]?dealerHand[0].rank+dealerHand[0].suit+' + ?':val(dealerHand);
+  document.getElementById('curr-cards').textContent=(playerHand.length+dealerHand.length)+' cards';
+}
+function updateAllStats(){
+  const s=stats;
+  document.getElementById('stat-hands').textContent=s.hands;
+  document.getElementById('stat-wins').textContent=s.wins;
+  document.getElementById('stat-winpct').textContent=s.hands>0?Math.round(s.wins/s.hands*100)+'%':'—';
+  document.getElementById('stat-blackjacks').textContent=s.blackjacks;
+  const mx=Math.max(s.wins,s.losses,s.pushes,1);
+  document.getElementById('bar-wins').style.width=Math.round(s.wins/mx*100)+'%';
+  document.getElementById('bar-losses').style.width=Math.round(s.losses/mx*100)+'%';
+  document.getElementById('bar-pushes').style.width=Math.round(s.pushes/mx*100)+'%';
+  document.getElementById('cnt-wins').textContent=s.wins;
+  document.getElementById('cnt-losses').textContent=s.losses;
+  document.getElementById('cnt-pushes').textContent=s.pushes;
+  document.getElementById('best-streak').textContent=s.bestStreak;
+  document.getElementById('biggest-win').textContent='$'+s.bigWin;
+  const sc=s.curStreak>0&&s.curStreakType?(s.curStreakType==='win'?'🔥':'❄️')+' '+s.curStreak+' '+s.curStreakType+(s.curStreak>1?'s':''):'—';
+  document.getElementById('curr-streak').textContent=sc;
+  const net=balance-500;
+  const ne=document.getElementById('net-profit');
+  ne.textContent=(net>=0?'+':'')+'$'+net;
+  ne.className='text-xs font-black '+(net>=0?'text-emerald-600':'text-red-500');
+  document.getElementById('curr-balance-stat').textContent='$'+balance;
+}
+
+buildDeck(); newHand(); updateAllStats();
+</script>
+</body>
+</html>

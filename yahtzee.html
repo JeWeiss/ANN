@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Atar Noder Neder | Yahtzee</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        "primary": "#006d36", "on-primary": "#ffffff",
+        "primary-container": "#50c878", "on-primary-container": "#005025",
+        "secondary": "#516169", "secondary-container": "#d2e2ec",
+        "on-secondary-container": "#55656d",
+        "surface": "#f7f9fb", "surface-container": "#eceef0",
+        "surface-container-low": "#f2f4f6",
+        "on-surface": "#191c1e", "on-surface-variant": "#3e4a3f",
+        "outline": "#6e7a6e", "outline-variant": "#bdcabc",
+        "background": "#f7f9fb",
+      },
+      fontFamily: { "body": ["Plus Jakarta Sans"] },
+    },
+  },
+}
+</script>
+<style>
+  body { font-family: 'Plus Jakarta Sans', sans-serif; }
+  .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+  .hide-scrollbar::-webkit-scrollbar { display: none; }
+  .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  .glass-panel { background: rgba(255,255,255,0.6); backdrop-filter: blur(12px); border: 1px solid rgba(226,232,240,0.8); }
+
+  .die {
+    width: 80px; height: 80px;
+    border-radius: 20px;
+    background: white;
+    border: 2px solid #e2e8f0;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    user-select: none;
+  }
+  .die:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+  .die.held {
+    background: #006d36;
+    border-color: #006d36;
+    box-shadow: 0 6px 20px rgba(0,109,54,0.35);
+    transform: translateY(-6px);
+  }
+  .die.rolling {
+    animation: rollAnim 0.5s ease;
+  }
+  @keyframes rollAnim {
+    0% { transform: rotate(0deg) scale(1); }
+    25% { transform: rotate(-15deg) scale(0.9); }
+    50% { transform: rotate(15deg) scale(1.1); }
+    75% { transform: rotate(-8deg) scale(0.95); }
+    100% { transform: rotate(0deg) scale(1); }
+  }
+
+  /* Pip-based dice faces */
+  .die-face { display: grid; width: 54px; height: 54px; padding: 6px; }
+  .pip {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: #191c1e;
+  }
+  .die.held .pip { background: white; }
+  .die-face.f1 { grid-template: "a" / 1fr; place-items: center; }
+  .die-face.f2 { grid-template: "a ." ". b" / 1fr 1fr; }
+  .die-face.f3 { grid-template: "a . ." ". b ." ". . c" / 1fr 1fr 1fr; }
+  .die-face.f4 { grid-template: "a . b" ". . ." "c . d" / 1fr 1fr 1fr; }
+  .die-face.f5 { grid-template: "a . b" ". c ." "d . e" / 1fr 1fr 1fr; }
+  .die-face.f6 { grid-template: "a . b" "c . d" "e . f" / 1fr 1fr 1fr; }
+
+  .score-row { transition: background 0.15s; cursor: pointer; }
+  .score-row:hover td { background: #f0fdf4; }
+  .score-row.scored { cursor: default; }
+  .score-row.scored:hover td { background: transparent; }
+  .score-row.preview td.score-cell { color: #059669; font-style: italic; }
+  .score-row.used td.score-cell { color: #191c1e; font-weight: 700; }
+  .score-row.zero td.score-cell { color: #9ca3af; font-weight: 600; }
+  .bonus-row td { background: #f0fdf4; }
+
+  .roll-btn {
+    background: #006d36; color: white;
+    border-radius: 9999px; font-weight: 900;
+    padding: 14px 48px; font-size: 15px;
+    letter-spacing: 0.15em; text-transform: uppercase;
+    box-shadow: 0 8px 24px rgba(0,109,54,0.3);
+    transition: all 0.2s; border: none; cursor: pointer;
+  }
+  .roll-btn:hover { transform: scale(1.05); box-shadow: 0 12px 32px rgba(0,109,54,0.4); }
+  .roll-btn:active { transform: scale(0.97); }
+  .roll-btn:disabled { background: #9ca3af; box-shadow: none; cursor: not-allowed; transform: none; }
+
+  .rolls-pip {
+    width: 10px; height: 10px; border-radius: 50%;
+    transition: background 0.3s;
+  }
+
+  .held-label {
+    position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%);
+    font-size: 9px; font-weight: 900; letter-spacing: 0.1em;
+    color: #006d36; text-transform: uppercase;
+  }
+</style>
+</head>
+<body class="bg-background text-on-surface h-screen overflow-hidden flex">
+
+<!-- Sidebar -->
+<aside dir="ltr" class="fixed left-0 top-0 h-full flex flex-col p-5 z-40 bg-slate-200 w-64 rounded-r-[32px] shadow-xl font-['Plus_Jakarta_Sans'] text-sm font-medium">
+  <div class="mb-8 px-2">
+    <h1 class="text-lg font-black text-emerald-800 tracking-tighter">Atar Noder Neder</h1>
+    <p class="text-slate-500 text-xs">Elite Member</p>
+  </div>
+  <nav class="flex-1 space-y-2">
+      <a href="index.html" class="flex items-center gap-3 px-4 py-2 text-slate-600 rounded-2xl hover:bg-slate-100 transition-colors">
+        <span class="material-symbols-outlined text-base">arrow_back</span>
+        <span>Go back to Lobby</span>
+      </a>
+      <a href="wordle.html" class="flex items-center gap-3 px-4 py-2 text-slate-600 rounded-2xl hover:bg-slate-100 transition-colors">
+        <span class="material-symbols-outlined text-base">match_word</span>
+        <span>Wordle</span>
+      </a>
+      <a href="yahtzee.html" class="flex items-center gap-3 px-4 py-2 bg-white text-emerald-700 rounded-2xl shadow-sm">
+        <span class="material-symbols-outlined text-base">casino</span>
+        <span>Yahtzee</span>
+      </a>
+      <a href="minesweeper.html" class="flex items-center gap-3 px-4 py-2 text-slate-600 rounded-2xl hover:bg-slate-100 transition-colors">
+        <span class="material-symbols-outlined text-base" style="font-variation-settings:'FILL' 1;">brightness_high</span>
+        <span>Minesweeper</span>
+      </a>
+      <a href="blackjack.html" class="flex items-center gap-3 px-4 py-2 text-slate-600 rounded-2xl hover:bg-slate-100 transition-colors">
+        <span class="material-symbols-outlined text-base" style="font-variation-settings:'FILL' 1;">playing_cards</span>
+        <span>BlackJack</span>
+      <a/>
+      <a href="bubbleshooter.html" class="flex flex-row items-center justify-start gap-3 px-4 py-2 text-slate-600 rounded-2xl hover:bg-slate-100 transition-colors w-full text-left">
+        <span class="material-symbols-outlined text-base" style="font-variation-settings:'FILL' 1;">bubble_chart</span>
+        <span>Bubble Shooter</span>
+      </a>
+      <a href="tetris.html" class="flex flex-row items-center gap-3 px-4 py-2 text-slate-600 rounded-2xl hover:bg-slate-100 transition-colors w-full text-left">
+        <span class="material-symbols-outlined text-base" style="font-variation-settings:'FILL' 1;">view_agenda</span>
+        <span>Tetris</span>
+      </a>
+  </nav>
+</aside>
+
+<!-- Main -->
+<main class="ml-64 flex-1 flex flex-col h-screen overflow-hidden">
+
+  <!-- Header -->
+  <header dir="rtl" class="flex justify-between items-center w-full px-6 h-16 bg-white/70 backdrop-blur-xl sticky top-0 z-30 shrink-0 border-b border-slate-100">
+      <div class="w-full max-w-7xl flex justify-between items-center px-12">
+          <div class="flex items-center gap-3 text-primary font-bold">
+              <span class="material-symbols-outlined">casino</span>
+              <span class="text-lg">Yahtzee</span>
+          </div>
+          <div id="game-message" class="text-sm font-bold text-emerald-700"></div>
+          <div class="text-sm font-bold text-emerald-900">Atar Noder Neder - funded by AIPAC</div>
+      </div>
+  </header>
+
+  <!-- Content -->
+  <div class="flex-1 p-6 grid grid-cols-12 gap-6 overflow-hidden">
+
+    <!-- Left: Fact panel -->
+    <section class="col-span-3 glass-panel rounded-[28px] p-6 flex flex-col gap-4 overflow-y-auto hide-scrollbar">
+      <h3 class="text-[10px] font-black tracking-[0.2em] text-emerald-800 uppercase">World Fact of the Day</h3>
+      <div class="flex flex-col gap-3">
+        <div class="w-8 h-1 bg-emerald-500 rounded-full"></div>
+        <p class="text-sm font-bold text-on-surface leading-snug">הידעת?</p>
+        <p class="text-xs text-on-surface-variant leading-relaxed">אם היית פותח את כל סלילי ה-DNA שבגוף שלך ומחבר אותם בקו ישר, הם היו מגיעים מהארץ לשמש ובחזרה 600 פעמים.</p>
+      </div>
+      <hr class="border-slate-200">
+      <div class="flex flex-col gap-3">
+        <div class="w-8 h-1 bg-blue-500 rounded-full"></div>
+        <p class="text-xs text-on-surface-variant leading-relaxed">צרפת הפסיקה להשתמש בגיליוטינה להוצאות להורג רק ב-1977. זה אומר שבאותה שנה שיצא הסרט הראשון של "מלחמת הכוכבים" (Star Wars), הגיליוטינה עדיין הייתה חוקית בצרפת.</p>
+      </div>
+      <button onclick="newGame()" class="px-5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-full font-bold text-xs uppercase tracking-widest transition-colors">
+      New Game
+    </button>
+      <!-- Score summary -->
+      <div class="mt-4 bg-emerald-50 rounded-2xl p-4 space-y-3">
+        <p class="text-[10px] font-black uppercase tracking-widest text-emerald-800">Score Summary</p>
+        <div class="flex justify-between text-xs font-bold">
+          <span class="text-on-surface-variant">Upper Section</span>
+          <span id="upper-total-disp" class="text-on-surface">0</span>
+        </div>
+        <div class="flex justify-between text-xs font-bold">
+          <span class="text-on-surface-variant">Bonus (63+)</span>
+          <span id="bonus-disp" class="text-on-surface">0</span>
+        </div>
+        <div class="flex justify-between text-xs font-bold">
+          <span class="text-on-surface-variant">Lower Section</span>
+          <span id="lower-total-disp" class="text-on-surface">0</span>
+        </div>
+        <hr class="border-emerald-200">
+        <div class="flex justify-between text-sm font-black">
+          <span class="text-emerald-900">Total Score</span>
+          <span id="grand-total-disp" class="text-emerald-700">0</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Center: Dice + Roll -->
+    <section class="col-span-6 flex flex-col items-center justify-center gap-8">
+
+      <!-- Dice -->
+      <div class="glass-panel rounded-[28px] px-10 py-8 flex flex-col items-center gap-6 w-full">
+        <p class="text-[10px] font-black tracking-[0.2em] uppercase text-emerald-800">Click dice to hold them</p>
+        <div class="flex gap-4 pb-6" id="dice-container">
+          <!-- dice rendered by JS -->
+        </div>
+
+        <!-- Rolls remaining -->
+        <div class="flex items-center gap-3">
+          <span class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Rolls left:</span>
+          <div class="flex gap-2" id="rolls-pips">
+            <div class="rolls-pip w-3 h-3 rounded-full bg-emerald-500"></div>
+            <div class="rolls-pip w-3 h-3 rounded-full bg-emerald-500"></div>
+            <div class="rolls-pip w-3 h-3 rounded-full bg-emerald-500"></div>
+          </div>
+          <span id="rolls-text" class="text-xs font-black text-emerald-700">3 remaining</span>
+        </div>
+
+        <button id="roll-btn" class="roll-btn" onclick="rollDice()">
+          🎲 Roll Dice
+        </button>
+      </div>
+
+      <!-- Turn info -->
+      <div class="glass-panel rounded-[28px] px-8 py-4 w-full flex items-center justify-between">
+        <div>
+          <p class="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">Turn</p>
+          <p id="turn-display" class="text-2xl font-black text-emerald-900">1 / 13</p>
+        </div>
+        <div class="text-center">
+          <p class="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">Dice Values</p>
+          <p id="dice-values" class="text-lg font-black text-slate-700">— — — — —</p>
+        </div>
+        <div class="text-right">
+          <p class="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">Total Score</p>
+          <p id="total-score-display" class="text-2xl font-black text-emerald-700">0</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right: Scorecard -->
+    <section class="col-span-3 glass-panel rounded-[28px] p-5 flex flex-col overflow-hidden">
+      <h3 class="text-[10px] font-black tracking-[0.2em] text-emerald-800 uppercase mb-3">Scorecard</h3>
+      <div class="flex-1 overflow-y-auto hide-scrollbar">
+        <table class="w-full text-sm" id="scorecard-table">
+          <thead>
+            <tr>
+              <th class="text-left py-1 text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Category</th>
+              <th class="text-right py-1 text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Score</th>
+            </tr>
+          </thead>
+          <tbody id="scorecard-body">
+            <!-- rendered by JS -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</main>
+
+<!-- Win modal -->
+<div id="win-modal" style="display:none;" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 items-center justify-center">
+  <div class="bg-white rounded-[32px] p-10 shadow-2xl max-w-md w-full mx-4 text-center">
+    <div class="text-6xl mb-3">🎲</div>
+    <h2 class="text-4xl font-black text-emerald-900 tracking-tighter mb-1">Game Over!</h2>
+    <p class="text-on-surface-variant text-sm mb-6">כל 13 התורות הסתיימו</p>
+
+    <div class="bg-slate-50 rounded-2xl p-5 mb-5 text-left space-y-2">
+      <div class="flex justify-between text-sm font-bold">
+        <span class="text-on-surface-variant">Upper Section</span>
+        <span id="modal-upper" class="text-on-surface">0</span>
+      </div>
+      <div class="flex justify-between text-sm font-bold">
+        <span class="text-on-surface-variant">Bonus (63+)</span>
+        <span id="modal-bonus" class="text-emerald-600">0</span>
+      </div>
+      <div class="flex justify-between text-sm font-bold">
+        <span class="text-on-surface-variant">Lower Section</span>
+        <span id="modal-lower" class="text-on-surface">0</span>
+      </div>
+      <hr class="border-slate-200 my-1">
+      <div class="flex justify-between items-center">
+        <span class="font-black text-emerald-900 text-base">Total Score</span>
+        <span id="modal-score" class="text-3xl font-black text-emerald-700">0</span>
+      </div>
+    </div>
+
+    <p id="modal-rating" class="text-sm font-bold text-on-surface-variant mb-5"></p>
+    <button onclick="newGame()" class="roll-btn w-full text-center">🔄 Play Again</button>
+  </div>
+</div>
+
+<script>
+// ============ GAME STATE ============
+const CATEGORIES = [
+  // Upper
+  { id: "aces",     label: "Aces",          section: "upper", desc: "Sum of all 1s" },
+  { id: "twos",     label: "Twos",          section: "upper", desc: "Sum of all 2s" },
+  { id: "threes",   label: "Threes",        section: "upper", desc: "Sum of all 3s" },
+  { id: "fours",    label: "Fours",         section: "upper", desc: "Sum of all 4s" },
+  { id: "fives",    label: "Fives",         section: "upper", desc: "Sum of all 5s" },
+  { id: "sixes",    label: "Sixes",         section: "upper", desc: "Sum of all 6s" },
+  // Lower
+  { id: "3kind",    label: "3 of a Kind",   section: "lower", desc: "3 same → sum all" },
+  { id: "4kind",    label: "4 of a Kind",   section: "lower", desc: "4 same → sum all" },
+  { id: "fh",       label: "Full House",    section: "lower", desc: "3+2 → 25 pts" },
+  { id: "sm",       label: "Sm. Straight",  section: "lower", desc: "4 seq → 30 pts" },
+  { id: "lg",       label: "Lg. Straight",  section: "lower", desc: "5 seq → 40 pts" },
+  { id: "yahtzee",  label: "YAHTZEE!",      section: "lower", desc: "5 same → 50 pts" },
+  { id: "chance",   label: "Chance",        section: "lower", desc: "Sum all dice" },
+];
+
+let dice = [0, 0, 0, 0, 0];
+let held = [false, false, false, false, false];
+let rollsLeft = 3;
+let turnsLeft = 13;
+let scores = {};        // { categoryId: score }
+let hasRolled = false;
+let gameActive = true;
+let yahtzeeBonus = 0;
+
+function newGame() {
+  dice = [0, 0, 0, 0, 0];
+  held = [false, false, false, false, false];
+  rollsLeft = 3;
+  turnsLeft = 13;
+  scores = {};
+  hasRolled = false;
+  gameActive = true;
+  yahtzeeBonus = 0;
+  document.getElementById("win-modal").style.display = "none";
+  document.getElementById("game-message").textContent = "";
+  renderDice();
+  renderScorecard();
+  updateUI();
+}
+
+// ============ DICE ============
+function rollDice() {
+  if (!gameActive) return;
+  if (rollsLeft <= 0) {
+    setMessage("Select a category to score!");
+    return;
+  }
+  rollsLeft--;
+  hasRolled = true;
+
+  const diceEls = document.querySelectorAll(".die");
+  diceEls.forEach((el, i) => {
+    if (!held[i]) {
+      dice[i] = Math.ceil(Math.random() * 6);
+      el.classList.add("rolling");
+      setTimeout(() => el.classList.remove("rolling"), 500);
+    }
+  });
+
+  setTimeout(() => {
+    renderDice();
+    renderScorecard();
+    updateUI();
+
+    if (rollsLeft === 0) {
+      setMessage("No more rolls — pick a category!");
+    }
+  }, 520);
+}
+
+function toggleHold(i) {
+  if (!hasRolled || rollsLeft === 3) return;
+  if (rollsLeft === 0) return;
+  held[i] = !held[i];
+  renderDice();
+}
+
+function renderDice() {
+  const container = document.getElementById("dice-container");
+  container.innerHTML = "";
+  dice.forEach((val, i) => {
+    const wrap = document.createElement("div");
+    wrap.style.position = "relative";
+    wrap.style.paddingBottom = "24px";
+
+    const die = document.createElement("div");
+    die.className = "die" + (held[i] ? " held" : "");
+    die.onclick = () => toggleHold(i);
+
+    if (val > 0) {
+      die.innerHTML = buildPips(val, held[i]);
+    } else {
+      die.innerHTML = `<span style="font-size:28px;color:#cbd5e1;">?</span>`;
+    }
+
+    if (held[i]) {
+      const lbl = document.createElement("div");
+      lbl.className = "held-label";
+      lbl.textContent = "HELD";
+      wrap.appendChild(lbl);
+    }
+
+    wrap.appendChild(die);
+    container.appendChild(wrap);
+  });
+
+  // Update dice values display
+  if (dice.some(d => d > 0)) {
+    document.getElementById("dice-values").textContent = dice.join("  ·  ");
+  }
+}
+
+function buildPips(n, isHeld) {
+  const pipColor = isHeld ? "background:white" : "background:#191c1e";
+  const p = () => `<div class="pip" style="${pipColor};width:10px;height:10px;border-radius:50%;"></div>`;
+  const e = () => `<div style="width:10px;height:10px;"></div>`;
+
+  const layouts = {
+    1: [[e(),e(),e()],[e(),p(),e()],[e(),e(),e()]],
+    2: [[p(),e(),e()],[e(),e(),e()],[e(),e(),p()]],
+    3: [[p(),e(),e()],[e(),p(),e()],[e(),e(),p()]],
+    4: [[p(),e(),p()],[e(),e(),e()],[p(),e(),p()]],
+    5: [[p(),e(),p()],[e(),p(),e()],[p(),e(),p()]],
+    6: [[p(),e(),p()],[p(),e(),p()],[p(),e(),p()]],
+  };
+  const rows = layouts[n];
+  return `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;width:54px;height:54px;padding:6px;">
+    ${rows.map(r => r.join("")).join("")}
+  </div>`;
+}
+
+// ============ SCORING LOGIC ============
+function calcScore(catId) {
+  if (!hasRolled) return null;
+  const counts = [0,0,0,0,0,0,0]; // index 1-6
+  dice.forEach(d => counts[d]++);
+  const sum = dice.reduce((a,b)=>a+b,0);
+  const isYahtzee = counts.some(c => c === 5);
+
+  switch(catId) {
+    case "aces":   return counts[1] * 1;
+    case "twos":   return counts[2] * 2;
+    case "threes": return counts[3] * 3;
+    case "fours":  return counts[4] * 4;
+    case "fives":  return counts[5] * 5;
+    case "sixes":  return counts[6] * 6;
+    case "3kind":  return counts.some(c=>c>=3) ? sum : 0;
+    case "4kind":  return counts.some(c=>c>=4) ? sum : 0;
+    case "fh": {
+      // 5-of-a-kind is NOT a full house (need 3+2 distinct groups)
+      if (isYahtzee) return 0;
+      const hasThree = counts.some(c=>c===3);
+      const hasTwo   = counts.some(c=>c===2);
+      return (hasThree && hasTwo) ? 25 : 0;
+    }
+    case "sm": {
+      // need ≥4 unique consecutive values — Yahtzee (5 of same) has only 1 unique, never qualifies
+      const uniqueSm = [...new Set(dice)].sort((a,b)=>a-b);
+      if (uniqueSm.length < 4) return 0;
+      const smPatterns = [[1,2,3,4],[2,3,4,5],[3,4,5,6]];
+      return smPatterns.some(s => s.every(n => uniqueSm.includes(n))) ? 30 : 0;
+    }
+    case "lg": {
+      // need exactly 5 unique consecutive values — Yahtzee has only 1 unique, never qualifies
+      const uniqueLg = [...new Set(dice)].sort((a,b)=>a-b);
+      if (uniqueLg.length !== 5) return 0;
+      return (JSON.stringify(uniqueLg)==='[1,2,3,4,5]' || JSON.stringify(uniqueLg)==='[2,3,4,5,6]') ? 40 : 0;
+    }
+    case "yahtzee": return isYahtzee ? 50 : 0;
+    case "chance": return sum;
+    default: return 0;
+  }
+}
+
+function scoreCategory(catId) {
+  if (!gameActive) return;
+  if (scores.hasOwnProperty(catId)) return; // already scored
+  if (!hasRolled) {
+    setMessage("Roll the dice first!");
+    return;
+  }
+
+  const sc = calcScore(catId);
+  scores[catId] = sc;
+
+  // Yahtzee bonus
+  if (catId === "yahtzee" && sc === 50 && scores["yahtzee"] !== undefined) {
+    // subsequent yahtzees
+  }
+
+  turnsLeft--;
+  rollsLeft = 3;
+  hasRolled = false;
+  held = [false, false, false, false, false];
+  dice = [0, 0, 0, 0, 0];
+
+  renderDice();
+  renderScorecard();
+  updateUI();
+
+  if (sc >= 50 && catId === "yahtzee") setMessage("🎲 YAHTZEE! Amazing!");
+  else if (sc > 0) setMessage(`Scored ${sc} points for ${CATEGORIES.find(c=>c.id===catId).label}!`);
+  else setMessage(`Scored 0 for ${CATEGORIES.find(c=>c.id===catId).label}.`);
+
+  if (turnsLeft === 0) {
+    setTimeout(() => endGame(), 600);
+  }
+}
+
+function getUpperTotal() {
+  return ["aces","twos","threes","fours","fives","sixes"]
+    .reduce((a,id) => a + (scores[id] || 0), 0);
+}
+function getBonus() { return getUpperTotal() >= 63 ? 35 : 0; }
+function getLowerTotal() {
+  return ["3kind","4kind","fh","sm","lg","yahtzee","chance"]
+    .reduce((a,id) => a + (scores[id] || 0), 0);
+}
+function getTotal() { return getUpperTotal() + getBonus() + getLowerTotal(); }
+
+// ============ RENDER SCORECARD ============
+function renderScorecard() {
+  const tbody = document.getElementById("scorecard-body");
+  tbody.innerHTML = "";
+
+  // Upper section header
+  const upperHdr = document.createElement("tr");
+  upperHdr.innerHTML = `<td colspan="2" class="pt-3 pb-1 text-[9px] font-black uppercase tracking-widest text-emerald-700">Upper Section</td>`;
+  tbody.appendChild(upperHdr);
+
+  ["aces","twos","threes","fours","fives","sixes"].forEach(id => {
+    appendScoreRow(tbody, id);
+  });
+
+  // Bonus row
+  const upperTotal = getUpperTotal();
+  const bonus = getBonus();
+  const bonusRow = document.createElement("tr");
+  bonusRow.innerHTML = `
+    <td class="py-2 pl-2 text-xs text-emerald-700 font-bold">Bonus (need 63) <span class="font-normal text-on-surface-variant">${upperTotal}/63</span></td>
+    <td class="py-2 text-right pr-2 font-black text-emerald-700">${bonus > 0 ? '+35' : (63 - upperTotal > 0 ? `-${63-upperTotal}` : '✓')}</td>`;
+  bonusRow.style.background = bonus > 0 ? "#f0fdf4" : "transparent";
+  tbody.appendChild(bonusRow);
+
+  // Lower section header
+  const lowerHdr = document.createElement("tr");
+  lowerHdr.innerHTML = `<td colspan="2" class="pt-4 pb-1 text-[9px] font-black uppercase tracking-widest text-emerald-700">Lower Section</td>`;
+  tbody.appendChild(lowerHdr);
+
+  ["3kind","4kind","fh","sm","lg","yahtzee","chance"].forEach(id => {
+    appendScoreRow(tbody, id);
+  });
+
+  // Total row
+  const totalRow = document.createElement("tr");
+  totalRow.innerHTML = `
+    <td class="pt-4 pb-2 font-black text-sm text-emerald-900 border-t border-emerald-100">TOTAL</td>
+    <td class="pt-4 pb-2 text-right font-black text-lg text-emerald-700 border-t border-emerald-100">${getTotal()}</td>`;
+  tbody.appendChild(totalRow);
+
+  // Update summary
+  document.getElementById("upper-total-disp").textContent = upperTotal;
+  document.getElementById("bonus-disp").textContent = bonus;
+  document.getElementById("lower-total-disp").textContent = getLowerTotal();
+  document.getElementById("grand-total-disp").textContent = getTotal();
+  document.getElementById("total-score-display").textContent = getTotal();
+}
+
+function appendScoreRow(tbody, id) {
+  const cat = CATEGORIES.find(c => c.id === id);
+  const row = document.createElement("tr");
+  row.className = "score-row";
+
+  const isScored = scores.hasOwnProperty(id);
+  const preview = !isScored && hasRolled ? calcScore(id) : null;
+
+  let scoreCell;
+  if (isScored) {
+    row.classList.add("scored", scores[id] > 0 ? "used" : "zero");
+    scoreCell = `<span>${scores[id]}</span>`;
+    if (scores[id] === 0) scoreCell = `<span style="color:#9ca3af">0</span>`;
+  } else if (preview !== null) {
+    row.classList.add("preview");
+    scoreCell = `<span style="color:#059669;font-style:italic;">${preview}</span>`;
+  } else {
+    scoreCell = `<span style="color:#cbd5e1">—</span>`;
+  }
+
+  row.innerHTML = `
+    <td class="py-2 pl-2 text-xs font-semibold text-on-surface" title="${cat.desc}">${cat.label}</td>
+    <td class="py-2 pr-2 text-right text-xs font-bold score-cell">${scoreCell}</td>`;
+
+  if (!isScored) {
+    row.onclick = () => scoreCategory(id);
+    row.style.cursor = "pointer";
+    row.addEventListener("mouseenter", () => {
+      if (!isScored) row.style.background = "#f0fdf4";
+    });
+    row.addEventListener("mouseleave", () => {
+      row.style.background = "";
+    });
+  }
+
+  tbody.appendChild(row);
+}
+
+// ============ UI UPDATE ============
+function updateUI() {
+  // Roll button
+  const btn = document.getElementById("roll-btn");
+  btn.disabled = rollsLeft === 0 || !gameActive || turnsLeft === 0;
+
+  // Turn display
+  document.getElementById("turn-display").textContent = `${13 - turnsLeft + 1} / 13`;
+
+  // Rolls pips
+  const pips = document.querySelectorAll(".rolls-pip");
+  pips.forEach((pip, i) => {
+    pip.style.background = i < rollsLeft ? "#10b981" : "#e2e8f0";
+  });
+  document.getElementById("rolls-text").textContent = `${rollsLeft} remaining`;
+}
+
+function setMessage(msg) {
+  const el = document.getElementById("game-message");
+  el.textContent = msg;
+  clearTimeout(el._timer);
+  el._timer = setTimeout(() => { el.textContent = ""; }, 3000);
+}
+
+function endGame() {
+  gameActive = false;
+  const total = getTotal();
+  const upper = getUpperTotal();
+  const bonus = getBonus();
+  const lower = getLowerTotal();
+
+  document.getElementById("modal-score").textContent = total;
+  document.getElementById("modal-upper").textContent = upper;
+  document.getElementById("modal-bonus").textContent = bonus > 0 ? `+${bonus} 🎉` : "0";
+  document.getElementById("modal-lower").textContent = lower;
+
+  let rating = "";
+  if (total >= 300) rating = "🏆 אגדי! תוצאה מדהימה!";
+  else if (total >= 250) rating = "🥇 מצוין! שיחקת נהדר!";
+  else if (total >= 200) rating = "🥈 טוב מאוד! כמעט מושלם.";
+  else if (total >= 150) rating = "🥉 לא רע! יש מקום לשיפור.";
+  else rating = "💪 ניסיון טוב! נסה שוב!";
+  document.getElementById("modal-rating").textContent = rating;
+
+  document.getElementById("win-modal").style.display = "flex";
+}
+
+// Init
+newGame();
+</script>
+</body>
+</html>

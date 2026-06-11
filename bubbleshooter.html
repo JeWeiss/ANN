@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Atar Noder Neder | Bubble Shooter</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        "primary": "#006d36","on-primary": "#ffffff",
+        "surface": "#f7f9fb","on-surface": "#191c1e",
+        "on-surface-variant": "#3e4a3f","background": "#f7f9fb",
+      },
+      fontFamily: { "body": ["Plus Jakarta Sans"] },
+    },
+  },
+}
+</script>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: 'Plus Jakarta Sans', sans-serif; }
+  .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+  .hide-scrollbar::-webkit-scrollbar { display: none; }
+  .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  .glass-panel { background: rgba(255,255,255,0.65); backdrop-filter: blur(14px); border: 1px solid rgba(226,232,240,0.9); }
+
+  #gameCanvas { display: block; border-radius: 16px; cursor: none; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
+
+  .stat-chip { display:flex;flex-direction:column;align-items:center;flex:1; }
+  .stat-chip-n { font-size:18px;font-weight:900;color:#065f46;line-height:1; }
+  .stat-chip-l { font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#9ca3af;margin-top:1px; }
+
+  .score-row { display:flex;justify-content:space-between;background:#f8fafc;border-radius:10px;padding:4px 10px; }
+  .score-row span { font-size:11px; }
+  .score-row .lbl { font-weight:700; }
+  .score-row .val { color:#6b7280; }
+  .score-row.hi .lbl,.score-row.hi .val { color:#006d36;font-weight:900; }
+  .score-row.am .lbl,.score-row.am .val { color:#d97706;font-weight:900; }
+
+  .srow { display:flex;justify-content:space-between; }
+  .srow .k { font-size:11px;font-weight:700;color:#6b7280; }
+  .srow .v { font-size:11px;font-weight:900;color:#191c1e; }
+  .srow .v.g { color:#006d36; }
+  .srow .v.a { color:#d97706; }
+
+  .bar-wrap { width:100%;height:4px;background:#e2e8f0;border-radius:99px;overflow:hidden;margin-top:2px; }
+  .bar-inner { height:100%;border-radius:99px;transition:width .4s; }
+  .drop-bar { transition: width .35s, background .35s; }
+</style>
+</head>
+<body class="bg-background text-on-surface h-screen overflow-hidden flex">
+
+<!-- ── SIDEBAR (identical to blackjack) ── -->
+<aside dir="ltr" class="fixed left-0 top-0 h-full flex flex-col p-5 z-40 bg-slate-200 w-64 rounded-r-[32px] shadow-xl font-['Plus_Jakarta_Sans'] text-sm font-medium">
+  <div class="mb-8 px-2">
+    <h1 class="text-lg font-black text-emerald-800 tracking-tighter">Atar Noder Neder</h1>
+    <p class="text-slate-500 text-xs">Elite Member</p>
+  </div>
+  <nav class="flex-1 space-y-2">
+    <a href="index.html" class="flex items-center gap-3 px-4 py-2 text-slate-600 rounded-2xl hover:bg-slate-100 transition-colors">
+      <span class="material-symbols-outlined text-base">arrow_back</span><span>Go back to Lobby</span>
+    </a>
+    <a href="wordle.html" class="flex items-center gap-3 px-4 py-2 text-slate-600 rounded-2xl hover:bg-slate-100 transition-colors">
+      <span class="material-symbols-outlined text-base">match_word</span><span>Wordle</span>
+    </a>
+    <a href="yahtzee.html" class="flex items-center gap-3 px-4 py-2 text-slate-600 rounded-2xl hover:bg-slate-100 transition-colors">
+      <span class="material-symbols-outlined text-base">casino</span><span>Yahtzee</span>
+    </a>
+    <a href="minesweeper.html" class="flex items-center gap-3 px-4 py-2 text-slate-600 rounded-2xl hover:bg-slate-100 transition-colors">
+      <span class="material-symbols-outlined text-base" style="font-variation-settings:'FILL' 1;">brightness_high</span><span>Minesweeper</span>
+    </a>
+    <a href="blackjack.html" class="flex items-center gap-3 px-4 py-2 text-slate-600 rounded-2xl hover:bg-slate-100 transition-colors">
+      <span class="material-symbols-outlined text-base" style="font-variation-settings:'FILL' 1;">playing_cards</span><span>Blackjack</span>
+    </a>
+    <a href="bubbleshooter.html" class="flex items-center gap-3 px-4 py-2 bg-white text-emerald-700 rounded-2xl shadow-sm">
+      <span class="material-symbols-outlined text-base" style="font-variation-settings:'FILL' 1;">bubble_chart</span><span>Bubble Shooter</span>
+    </a>
+    <a href="tetris.html" class="flex flex-row items-center gap-3 px-4 py-2 text-slate-600 rounded-2xl hover:bg-slate-100 transition-colors w-full text-left">
+            <span class="material-symbols-outlined text-base" style="font-variation-settings:'FILL' 1;">view_agenda</span>
+            <span>Tetris</span>
+        </a>
+  </nav>
+</aside>
+
+<!-- ── MAIN ── -->
+<main class="ml-64 flex-1 flex flex-col h-screen overflow-hidden">
+
+  <!-- HEADER (identical to blackjack) -->
+  <header dir="rtl" class="flex justify-between items-center w-full px-6 h-16 bg-white/70 backdrop-blur-xl sticky top-0 z-30 shrink-0 border-b border-slate-100">
+    <div class="w-full max-w-7xl flex justify-between items-center px-12">
+      <div class="flex items-center gap-3 text-primary font-bold">
+        <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1;">bubble_chart</span>
+        <span class="text-lg">Bubble Shooter</span>
+      </div>
+      <div id="game-message" class="text-sm font-bold text-emerald-700">🫧 Place your aim and click!</div>
+      <div class="text-sm font-bold text-emerald-900">Atar Noder Neder - funded by AIPAC</div>
+    </div>
+  </header>
+
+  <!-- BODY: 3 columns like blackjack -->
+  <div class="flex-1 p-4 grid grid-cols-12 gap-4 overflow-hidden min-h-0">
+
+    <!-- LEFT: How to Play -->
+    <aside class="col-span-3 glass-panel rounded-[28px] p-5 flex flex-col gap-3 overflow-y-auto hide-scrollbar">
+      <div class="flex items-center gap-2 text-emerald-800 font-black uppercase text-xs">
+        <span class="material-symbols-outlined text-sm">help_outline</span><span>How to Play</span>
+      </div>
+      <div class="flex flex-col gap-2.5">
+        <div class="flex gap-2"><div class="w-6 h-6 shrink-0 rounded-full bg-primary flex items-center justify-center text-[10px] font-black text-white">1</div><p class="text-[11px] leading-relaxed text-on-surface-variant"><b class="text-on-surface">Aim</b> your mouse over the board and <b class="text-on-surface">click</b> to shoot.</p></div>
+        <div class="flex gap-2"><div class="w-6 h-6 shrink-0 rounded-full bg-primary flex items-center justify-center text-[10px] font-black text-white">2</div><p class="text-[11px] leading-relaxed text-on-surface-variant">Match <b class="text-on-surface">3 or more</b> same-color bubbles to pop them.</p></div>
+        <div class="flex gap-2"><div class="w-6 h-6 shrink-0 rounded-full bg-primary flex items-center justify-center text-[10px] font-black text-white">3</div><p class="text-[11px] leading-relaxed text-on-surface-variant">Bubbles <b class="text-on-surface">bounce</b> off walls — use angles to reach tricky spots.</p></div>
+        <div class="flex gap-2"><div class="w-6 h-6 shrink-0 rounded-full bg-primary flex items-center justify-center text-[10px] font-black text-white">4</div><p class="text-[11px] leading-relaxed text-on-surface-variant">Every <b class="text-on-surface" id="tip-drop">8</b> misses a new row drops. Don't let bubbles reach the red line!</p></div>
+        <div class="flex gap-2"><div class="w-6 h-6 shrink-0 rounded-full bg-primary flex items-center justify-center text-[10px] font-black text-white">5</div><p class="text-[11px] leading-relaxed text-on-surface-variant">Press <b class="text-on-surface">Space</b> or click NEXT to swap current ↔ next bubble.</p></div>
+      </div>
+      <hr class="border-slate-200"/>
+      <p class="text-[10px] font-black uppercase tracking-widest text-emerald-800">Scoring</p>
+      <div class="flex flex-col gap-1">
+        <div class="score-row"><span class="lbl">3 match</span><span class="val">100 pts</span></div>
+        <div class="score-row"><span class="lbl">4 match</span><span class="val">200 pts</span></div>
+        <div class="score-row"><span class="lbl">5 match</span><span class="val">400 pts</span></div>
+        <div class="score-row hi"><span class="lbl">6+ match</span><span class="val">800+</span></div>
+        <div class="score-row am"><span class="lbl">Drop bonus</span><span class="val">+50 each</span></div>
+      </div>
+      <hr class="border-slate-200"/>
+      <p class="text-[10px] font-black uppercase tracking-widest text-emerald-800">Tips</p>
+      <p class="text-[11px] text-on-surface-variant leading-relaxed">→ Aim high to cascade drops.<br/>→ Swap when you have no match.<br/>→ Bank off walls for hidden pockets.</p>
+      <hr class="border-slate-200"/>
+      <p class="text-[10px] font-black uppercase tracking-widest text-emerald-800">Difficulty</p>
+      <select id="diff-select" onchange="changeDiff()" class="text-xs font-bold bg-slate-100 text-slate-700 border-none rounded-full px-3 py-2 w-full focus:outline-none cursor-pointer">
+        <option value="easy">Easy (5 colors)</option>
+        <option value="medium" selected>Medium (6 colors)</option>
+        <option value="hard">Hard — fast drops</option>
+      </select>
+      <button onclick="newGame()" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full font-bold text-xs uppercase tracking-widest transition-colors mt-auto">New Game</button>
+    </aside>
+
+    <!-- CENTER: topbar + canvas -->
+    <section class="col-span-6 flex flex-col gap-3 min-h-0">
+
+      <!-- Top stats bar -->
+      <div class="glass-panel rounded-2xl px-4 py-2.5 flex items-center gap-3 shrink-0">
+        <div class="stat-chip"><span class="stat-chip-n" id="ui-score">0</span><span class="stat-chip-l">Score</span></div>
+        <div class="w-px h-6 bg-slate-200 shrink-0"></div>
+        <div class="stat-chip"><span class="stat-chip-n" id="ui-level">1</span><span class="stat-chip-l">Level</span></div>
+        <div class="w-px h-6 bg-slate-200 shrink-0"></div>
+        <div class="stat-chip"><span class="stat-chip-n" id="ui-shots">0</span><span class="stat-chip-l">Shots</span></div>
+        <div class="w-px h-6 bg-slate-200 shrink-0"></div>
+        <div class="stat-chip"><span class="stat-chip-n" id="ui-popped">0</span><span class="stat-chip-l">Popped</span></div>
+        <div class="w-px h-6 bg-slate-200 shrink-0"></div>
+        <div class="flex-1 min-w-0">
+          <div class="flex justify-between mb-1">
+            <span class="text-[8px] font-black uppercase text-on-surface-variant">Next row in</span>
+            <span id="ui-countdown" class="text-[8px] font-black text-emerald-700">8 misses</span>
+          </div>
+          <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+            <div id="drop-fill" class="drop-bar h-full bg-emerald-500 rounded-full" style="width:100%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Canvas — fills all remaining height -->
+      <div id="canvas-wrap" class="flex-1 min-h-0 min-w-0">
+        <canvas id="gameCanvas"></canvas>
+      </div>
+    </section>
+
+    <!-- RIGHT: Stats -->
+    <aside class="col-span-3 glass-panel rounded-[28px] p-5 flex flex-col gap-3 overflow-y-auto hide-scrollbar">
+      <div class="flex items-center gap-2 text-emerald-800 font-black uppercase text-xs">
+        <span class="material-symbols-outlined text-sm">bar_chart</span><span>Session Stats</span>
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <div class="bg-emerald-50 rounded-2xl p-3 text-center"><p id="s-best" class="text-2xl font-black text-emerald-800">0</p><p class="text-[9px] font-bold uppercase tracking-wider text-on-surface-variant">Best</p></div>
+        <div class="bg-emerald-50 rounded-2xl p-3 text-center"><p id="s-games" class="text-2xl font-black text-emerald-800">0</p><p class="text-[9px] font-bold uppercase tracking-wider text-on-surface-variant">Games</p></div>
+        <div class="bg-emerald-50 rounded-2xl p-3 text-center"><p id="s-popped" class="text-2xl font-black text-emerald-800">0</p><p class="text-[9px] font-bold uppercase tracking-wider text-on-surface-variant">Popped</p></div>
+        <div class="bg-emerald-50 rounded-2xl p-3 text-center"><p id="s-combo" class="text-2xl font-black text-emerald-800">0</p><p class="text-[9px] font-bold uppercase tracking-wider text-on-surface-variant">Combo</p></div>
+      </div>
+      <hr class="border-slate-200"/>
+      <p class="text-[10px] font-black uppercase tracking-widest text-emerald-800">Current Game</p>
+      <div class="flex flex-col gap-1.5">
+        <div class="srow"><span class="k">Score</span><span class="v g" id="c-score">0</span></div>
+        <div class="srow"><span class="k">Level</span><span class="v" id="c-level">1</span></div>
+        <div class="srow"><span class="k">Shots fired</span><span class="v" id="c-shots">0</span></div>
+        <div class="srow"><span class="k">Popped</span><span class="v g" id="c-popped">0</span></div>
+        <div class="srow"><span class="k">Best combo</span><span class="v a" id="c-combo">0</span></div>
+        <div class="srow"><span class="k">Accuracy</span><span class="v" id="c-acc">—</span></div>
+      </div>
+      <hr class="border-slate-200"/>
+      <p class="text-[10px] font-black uppercase tracking-widest text-emerald-800">Board</p>
+      <div class="flex flex-col gap-1.5">
+        <div class="srow"><span class="k">Fill</span><span class="v" id="c-fill">0%</span></div>
+        <div class="bar-wrap"><div class="bar-inner" id="c-fillbar" style="width:0%;background:#f87171"></div></div>
+        <div class="srow"><span class="k">Remaining</span><span class="v" id="c-remaining">0</span></div>
+        <div class="srow"><span class="k">Colors</span><span class="v" id="c-colors">0</span></div>
+      </div>
+      <hr class="border-slate-200"/>
+      <p class="text-[10px] font-black uppercase tracking-widest text-emerald-800">Next Bubble</p>
+      <div id="next-preview" onclick="swapBubbles()" class="flex items-center gap-3 bg-slate-50 rounded-2xl p-3 cursor-pointer hover:bg-slate-100 transition-colors">
+        <div id="next-dot" class="w-8 h-8 rounded-full flex-shrink-0 shadow-md"></div>
+        <div>
+          <p id="next-name" class="text-xs font-bold text-on-surface">—</p>
+          <p class="text-[10px] text-on-surface-variant">Click or Space to swap</p>
+        </div>
+      </div>
+      <button onclick="newGame()" class="mt-auto px-5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-full font-bold text-xs uppercase tracking-widest transition-colors">Reset Session</button>
+    </aside>
+  </div>
+</main>
+
+<script>
+'use strict';
+// ═══════════════════════════════════════════════════════════
+//  CONSTANTS
+// ═══════════════════════════════════════════════════════════
+const PALETTE = ['#ef4444','#3b82f6','#22c55e','#f59e0b','#06b6d4','#ec4899'];
+const CNAME   = {'#ef4444':'Red','#3b82f6':'Blue','#22c55e':'Green','#f59e0b':'Orange','#06b6d4': 'Cyan','#ec4899':'Pink'};
+const DIFF    = {
+  easy:   { nc:5, spd:10, initR:5 },
+  medium: { nc:6, spd:8,  initR:6 },
+  hard:   { nc:6, spd:6,  initR:7 },
+};
+const NCOLS = 14;  // bubbles in even row
+const NVIS  = 12;  // visible rows
+
+// ═══════════════════════════════════════════════════════════
+//  CANVAS — logical size == CSS size (1:1, no DPR scaling needed for coords)
+// ═══════════════════════════════════════════════════════════
+const canvas = document.getElementById('gameCanvas');
+const ctx    = canvas.getContext('2d');
+const wrap   = document.getElementById('canvas-wrap');
+
+let R=20, CW=400, CH=600, LY=560;
+
+function resizeCanvas() {
+  CW = wrap.clientWidth;
+  CH = wrap.clientHeight;
+  canvas.width  = CW;
+  canvas.height = CH;
+  canvas.style.width  = CW + 'px';
+  canvas.style.height = CH + 'px';
+  // R: fit NCOLS across width, also check height fits NVIS rows
+  const rW = Math.floor((CW - 4) / (NCOLS * 2 + 1));
+  const rH = Math.floor((CH - 60) / ((NVIS + 1) * Math.sqrt(3)));
+  R  = Math.max(14, Math.min(28, rW, rH));
+  LY = CH - R * 2.8;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  GRID MATH
+// ═══════════════════════════════════════════════════════════
+let grid = [];
+function rowLen(r){ return r % 2 === 0 ? NCOLS : NCOLS - 1; }
+function bx(col, row){
+  const off = row % 2 === 1 ? R : 0;
+  const totalW = NCOLS * R * 2;
+  const startX = (CW - totalW) / 2;
+  return startX + R + col * R * 2 + off;
+}
+function by(row){ return R + row * R * Math.sqrt(3); }
+
+function initGrid(){
+  const cfg = DIFF[diff];
+  const pal = PALETTE.slice(0, cfg.nc);
+  grid = [];
+  const total = NVIS + 4;
+  for(let r=0; r<total; r++){
+    grid[r] = new Array(rowLen(r)).fill(null);
+    if(r < cfg.initR)
+      for(let c=0; c<rowLen(r); c++)
+        grid[r][c] = pal[Math.floor(Math.random()*pal.length)];
+  }
+}
+
+function pushRow() {
+  const cfg = DIFF[diff];
+  const pal = PALETTE.slice(0, cfg.nc);
+  
+  // 1. הוספת השורה החדשה למעלה
+  grid.unshift(new Array(rowLen(0)).fill(null).map(() => pal[Math.floor(Math.random() * pal.length)]));
+  
+  // 2. שמירה על אורך המערך
+  while(grid.length < NVIS + 4) {
+    grid.push(new Array(rowLen(grid.length)).fill(null));
+  }
+
+  // --- התיקון: בדיקת בועות באוויר ---
+  // ברגע שהשורות ירדו, הקשרים בין הבועות השתנו. 
+  // אנחנו מחפשים את כל הבועות שלא מחוברות יותר לתקרה (שורה 0).
+  const dangling = findDangle(); 
+  
+  if (dangling.length > 0) {
+    dangling.forEach(([r, c]) => {
+      // אנחנו מוחקים אותן מהגריד כדי שלא ירחפו
+      // אם יש לך פונקציית burst, כדאי להפעיל אותה כאן לאפקט ויזואלי
+      if (typeof burst === 'function') {
+        burst(bx(c, r), by(r), grid[r][c]);
+      }
+      grid[r][c] = null;
+    });
+    
+    // עדכון הניקוד על בועות שנפלו "בחינם"
+    score += dangling.length * 50; 
+  }
+  
+  // עדכון הסטטיסטיקה ב-UI
+  updateAllStats();
+}
+
+function boardFull(){
+  for(let r=NVIS; r<grid.length; r++)
+    if(grid[r] && grid[r].some(c=>c)) return true;
+  return false;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  HEX NEIGHBORS
+// ═══════════════════════════════════════════════════════════
+function nbrs(r, c){
+  const even = r%2===0;
+  const res = [];
+  if(c>0)            res.push([r,c-1]);
+  if(c<rowLen(r)-1)  res.push([r,c+1]);
+  function addR(nr){
+    if(nr<0||nr>=grid.length) return;
+    const nl = rowLen(nr);
+    if(even){ if(c<nl) res.push([nr,c]); if(c-1>=0) res.push([nr,c-1]); }
+    else     { if(c<nl) res.push([nr,c]); if(c+1<nl) res.push([nr,c+1]); }
+  }
+  addR(r-1); addR(r+1);
+  return res;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  FLOOD / DANGLE
+// ═══════════════════════════════════════════════════════════
+function floodColor(sr, sc){
+  const color = grid[sr]&&grid[sr][sc];
+  if(!color) return [];
+  const seen = new Set([`${sr},${sc}`]);
+  const q = [[sr,sc]];
+  while(q.length){
+    const [r,c] = q.shift();
+    for(const [nr,nc] of nbrs(r,c)){
+      const k=`${nr},${nc}`;
+      if(!seen.has(k)&&grid[nr]&&grid[nr][nc]===color){ seen.add(k);q.push([nr,nc]); }
+    }
+  }
+  return [...seen].map(k=>k.split(',').map(Number));
+}
+
+function findDangle(){
+  const att = new Set();
+  const q = [];
+  (grid[0]||[]).forEach((c,ci)=>{ if(c){att.add(`0,${ci}`);q.push([0,ci]);} });
+  while(q.length){
+    const [r,c]=q.shift();
+    for(const [nr,nc] of nbrs(r,c)){
+      const k=`${nr},${nc}`;
+      if(!att.has(k)&&grid[nr]&&grid[nr][nc]){att.add(k);q.push([nr,nc]);}
+    }
+  }
+  const out=[];
+  grid.forEach((row,r)=>row&&row.forEach((c,ci)=>{
+    if(c&&!att.has(`${r},${ci}`)) out.push([r,ci]);
+  }));
+  return out;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  SNAP
+// ═══════════════════════════════════════════════════════════
+function snapCell(x, y){
+  let best=null, bd=Infinity;
+  for(let r=0; r<Math.min(grid.length,NVIS+1); r++){
+    for(let c=0; c<rowLen(r); c++){
+      if(grid[r]&&grid[r][c]) continue;
+      const d=Math.hypot(x-bx(c,r),y-by(r));
+      if(d<bd){bd=d;best=[r,c];}
+    }
+  }
+  if(bd<R*2.1) return best;
+  // fallback
+  let r=Math.round((y-R)/(R*Math.sqrt(3)));
+  r=Math.max(0,Math.min(NVIS,r));
+  while(grid.length<=r+1) grid.push(new Array(rowLen(grid.length)).fill(null));
+  const off=r%2===1?R:0;
+  const totalW=NCOLS*R*2, startX=(CW-totalW)/2;
+  let c=Math.round((x-startX-R-off)/(R*2));
+  c=Math.max(0,Math.min(rowLen(r)-1,c));
+  if(grid[r]&&grid[r][c]){
+    for(let d=1;d<=rowLen(r);d++){
+      if(c-d>=0&&!grid[r][c-d]) return [r,c-d];
+      if(c+d<rowLen(r)&&!grid[r][c+d]) return [r,c+d];
+    }
+  }
+  return [r,c];
+}
+
+// ═══════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════
+let diff='medium';
+let score=0,shots=0,popped=0,bestCombo=0,level=1,shotsLeft=8;
+let curColor=null,nxtColor=null;
+let proj=null, particles=[], labels=[];
+let alive=false, gameOver=false, pendingDrop=false;
+const sess={best:0,games:0,popped:0,combo:0};
+let mX=0,mY=0;
+
+// ═══════════════════════════════════════════════════════════
+//  DRAW BUBBLE
+// ═══════════════════════════════════════════════════════════
+function drawBub(x,y,r,color,alpha){
+  ctx.save();
+  if(alpha!==undefined) ctx.globalAlpha=alpha;
+  ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2);
+  ctx.fillStyle=color;
+  ctx.shadowColor='rgba(0,0,0,0.18)';ctx.shadowBlur=5;ctx.shadowOffsetY=2;
+  ctx.fill();ctx.shadowBlur=0;ctx.shadowOffsetY=0;
+  ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);
+  ctx.strokeStyle='rgba(255,255,255,0.3)';ctx.lineWidth=1.5;ctx.stroke();
+  const g=ctx.createRadialGradient(x-r*.28,y-r*.33,r*.03,x-r*.1,y-r*.15,r*.72);
+  g.addColorStop(0,'rgba(255,255,255,0.65)');
+  g.addColorStop(.5,'rgba(255,255,255,0.1)');
+  g.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);
+  ctx.fillStyle=g;ctx.fill();
+  ctx.restore();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  DRAW FRAME
+// ═══════════════════════════════════════════════════════════
+function draw(){
+  ctx.clearRect(0,0,CW,CH);
+  // bg
+  const bg=ctx.createLinearGradient(0,0,0,CH);
+  bg.addColorStop(0,'#ecfdf5');bg.addColorStop(1,'#f8fafc');
+  ctx.fillStyle=bg;ctx.fillRect(0,0,CW,CH);
+
+  // ghost dots
+  ctx.fillStyle='rgba(0,0,0,0.04)';
+  for(let r=0;r<NVIS;r++) for(let c=0;c<rowLen(r);c++){
+    ctx.beginPath();ctx.arc(bx(c,r),by(r),2,0,Math.PI*2);ctx.fill();
+  }
+
+  // danger line
+  const dy2=by(NVIS-1)+R*.9;
+  ctx.save();ctx.strokeStyle='rgba(239,68,68,0.38)';ctx.lineWidth=1.5;
+  ctx.setLineDash([6,4]);ctx.beginPath();ctx.moveTo(0,dy2);ctx.lineTo(CW,dy2);ctx.stroke();
+  ctx.setLineDash([]);ctx.restore();
+
+  // grid
+  for(let r=0;r<grid.length;r++){
+    if(!grid[r]) continue;
+    if(by(r)-R>CH) break;
+    for(let c=0;c<grid[r].length;c++) if(grid[r][c]) drawBub(bx(c,r),by(r),R,grid[r][c]);
+  }
+
+  // aim
+  if(alive&&!gameOver&&!proj) drawAim();
+
+  // projectile
+  if(proj) drawBub(proj.x,proj.y,R,proj.color);
+
+  // particles
+  for(const p of particles){
+    ctx.save();ctx.globalAlpha=p.life;ctx.fillStyle=p.col;
+    ctx.beginPath();ctx.arc(p.x,p.y,p.r*p.life,0,Math.PI*2);ctx.fill();ctx.restore();
+  }
+
+  // score labels
+  for(const l of labels){
+    ctx.save();ctx.globalAlpha=l.life;
+    ctx.font=`bold ${Math.round(R*.8)}px Plus Jakarta Sans`;
+    ctx.fillStyle='#065f46';ctx.textAlign='center';
+    ctx.fillText('+'+l.pts,l.x,l.y);ctx.restore();
+  }
+
+  drawLauncher();
+
+  // crosshair
+  if(alive&&!gameOver){
+    ctx.save();ctx.strokeStyle='rgba(0,109,54,0.75)';ctx.lineWidth=2;
+    ctx.beginPath();ctx.arc(mX,mY,7,0,Math.PI*2);ctx.stroke();
+    ctx.beginPath();ctx.arc(mX,mY,2,0,Math.PI*2);
+    ctx.fillStyle='rgba(0,109,54,0.75)';ctx.fill();ctx.restore();
+  }
+
+  if(gameOver){
+    ctx.save();ctx.fillStyle='rgba(0,0,0,0.5)';ctx.fillRect(0,0,CW,CH);
+    ctx.textAlign='center';
+    ctx.font=`900 ${Math.round(R*1.3)}px Plus Jakarta Sans`;ctx.fillStyle='#fff';
+    ctx.fillText('GAME OVER',CW/2,CH/2-R);
+    ctx.font=`700 ${Math.round(R*.75)}px Plus Jakarta Sans`;ctx.fillStyle='rgba(255,255,255,.8)';
+    ctx.fillText(`Score: ${score}`,CW/2,CH/2+R*.4);
+    ctx.font=`600 ${Math.round(R*.6)}px Plus Jakarta Sans`;ctx.fillStyle='#6ee7b7';
+    ctx.fillText('Click "New Game" to play again',CW/2,CH/2+R*1.6);
+    ctx.restore();
+  }
+}
+
+function drawLauncher(){
+  const lx=CW/2,ly=LY;
+  ctx.save();ctx.strokeStyle='rgba(0,109,54,0.12)';ctx.lineWidth=2;
+  ctx.beginPath();ctx.arc(lx,ly,R*1.7,0,Math.PI*2);ctx.stroke();ctx.restore();
+  if(curColor&&!proj) drawBub(lx,ly,R,curColor);
+  if(nxtColor){
+    const nx=lx+R*2.8,ny=ly+R*.2;
+    ctx.save();ctx.fillStyle='rgba(0,0,0,.2)';
+    ctx.font=`700 ${Math.max(7,Math.round(R*.42))}px Plus Jakarta Sans`;
+    ctx.textAlign='center';ctx.fillText('NEXT',nx,ny-R*.9);ctx.restore();
+    drawBub(nx,ny,R*.65,nxtColor);
+  }
+}
+
+function drawAim(){
+  const lx=CW/2,ly=LY;
+  if(mY>ly-10) return;
+  const dx=mX-lx,dy2=mY-ly;
+  const len=Math.hypot(dx,dy2);
+  if(len<1) return;
+  const spd=R*0.38;
+  let x=lx,y=ly,vx=(dx/len)*spd,vy=(dy2/len)*spd,bounces=0;
+  ctx.save();
+  ctx.strokeStyle='rgba(0,109,54,0.22)';ctx.lineWidth=2.5;ctx.lineCap='round';
+  ctx.setLineDash([R*.55,R*.5]);
+  ctx.beginPath();ctx.moveTo(x,y);
+  for(let i=0;i<500;i++){
+    x+=vx;y+=vy;
+    if(x-R<0){x=R;vx=Math.abs(vx);bounces++;}
+    if(x+R>CW){x=CW-R;vx=-Math.abs(vx);bounces++;}
+    if(y<0||bounces>2) break;
+    ctx.lineTo(x,y);
+    let hit=false;
+    for(let r=0;r<NVIS&&!hit;r++) if(grid[r]) for(let c=0;c<rowLen(r)&&!hit;c++)
+      if(grid[r][c]&&Math.hypot(x-bx(c,r),y-by(r))<R*1.85) hit=true;
+    if(hit) break;
+  }
+  ctx.stroke();ctx.setLineDash([]);
+  ctx.globalAlpha=.4;ctx.fillStyle=curColor||'#006d36';
+  ctx.beginPath();ctx.arc(x,y,R*.35,0,Math.PI*2);ctx.fill();
+  ctx.restore();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  SHOOT
+// ═══════════════════════════════════════════════════════════
+function shoot(tx,ty){
+  if(!alive||gameOver||proj) return;
+  const lx=CW/2,ly=LY;
+  if(ty>ly-10) return;
+  const dx=tx-lx,dy2=ty-ly,len=Math.hypot(dx,dy2),spd=R*0.38;
+  proj={x:lx,y:ly,dx:(dx/len)*spd,dy:(dy2/len)*spd,color:curColor};
+  shots++;
+  curColor=nxtColor;
+  nxtColor=randColor();
+  updateNextUI();
+  updateTopBar();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  TICK
+// ═══════════════════════════════════════════════════════════
+function tick(){
+  if(!proj) return;
+  proj.x+=proj.dx;proj.y+=proj.dy;
+  if(proj.x-R<0){proj.x=R;proj.dx=Math.abs(proj.dx);}
+  if(proj.x+R>CW){proj.x=CW-R;proj.dx=-Math.abs(proj.dx);}
+  if(proj.y-R<0){proj.y=R;land();return;}
+  for(let r=0;r<Math.min(grid.length,NVIS+1);r++){
+    if(!grid[r]) continue;
+    for(let c=0;c<rowLen(r);c++)
+      if(grid[r][c]&&Math.hypot(proj.x-bx(c,r),proj.y-by(r))<R*1.86){land();return;}
+  }
+}
+
+function land(){
+  const {x,y,color}=proj;proj=null;
+  const [r,c]=snapCell(x,y);
+  while(grid.length<=r+1) grid.push(new Array(rowLen(grid.length)).fill(null));
+  if(!grid[r]) grid[r]=new Array(rowLen(r)).fill(null);
+  grid[r][c]=color;
+
+  const grp=floodColor(r,c);
+  if(grp.length>=3){
+    grp.forEach(([gr,gc])=>{burst(bx(gc,gr),by(gr),grid[gr][gc]);grid[gr][gc]=null;});
+    const dangle=findDangle();
+    dangle.forEach(([dr,dc])=>{burst(bx(dc,dr),by(dr),grid[dr][dc]);grid[dr][dc]=null;});
+    const total=grp.length+dangle.length;
+    popped+=total;
+    if(total>bestCombo) bestCombo=total;
+    if(total>sess.combo) sess.combo=total;
+    const pts=scoreFor(grp.length)+dangle.length*50;
+    score+=pts;
+    labels.push({x:bx(c,r),y:by(r)-R*1.2,pts,life:1});
+    setMsg(pts>=400?`🔥 ×${grp.length} Combo! +${pts}`:`+${pts} pts`);
+  } else {
+    // miss — decrement counter
+    shotsLeft--;
+    if(shotsLeft<=0){pendingDrop=true;shotsLeft=DIFF[diff].spd;}
+  }
+
+  if(pendingDrop){pendingDrop=false;pushRow();level++;}
+  if(boardFull()){endGame();return;}
+  updateAllStats();
+}
+
+function scoreFor(n){
+  if(n<3) return 0;
+  if(n===3) return 100;if(n===4) return 200;if(n===5) return 400;
+  return 800*(n-4);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  PARTICLES
+// ═══════════════════════════════════════════════════════════
+function burst(x,y,col){
+  for(let i=0;i<10;i++){
+    const a=Math.random()*Math.PI*2,s=1.5+Math.random()*3.5;
+    particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,col,r:R*(.22+Math.random()*.28),life:1});
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  LOOP
+// ═══════════════════════════════════════════════════════════
+let raf;
+function loop(){
+  tick();
+  particles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=.1;p.life-=.04;});
+  particles=particles.filter(p=>p.life>0);
+  labels.forEach(l=>{l.y-=.9;l.life-=.022;});
+  labels=labels.filter(l=>l.life>0);
+  draw();
+  raf=requestAnimationFrame(loop);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  INIT / END
+// ═══════════════════════════════════════════════════════════
+function newGame(){
+  if(raf) cancelAnimationFrame(raf);
+  const cfg=DIFF[diff];
+  score=0;shots=0;popped=0;bestCombo=0;level=1;shotsLeft=cfg.spd;
+  pendingDrop=false;alive=true;gameOver=false;
+  particles=[];labels=[];proj=null;
+  sess.games++;
+  document.getElementById('s-games').textContent=sess.games;
+  document.getElementById('tip-drop').textContent=cfg.spd;
+  resizeCanvas();
+  initGrid();
+  curColor=randColor();nxtColor=randColor();
+  updateNextUI();updateTopBar();updateAllStats();
+  setMsg('🫧 Aim and click to shoot!');
+  loop();
+}
+
+function endGame(){
+  alive=false;gameOver=true;
+  if(score>sess.best){sess.best=score;document.getElementById('s-best').textContent=score;}
+  sess.popped+=popped;document.getElementById('s-popped').textContent=sess.popped;
+  if(bestCombo>sess.combo){sess.combo=bestCombo;document.getElementById('s-combo').textContent=bestCombo;}
+  setMsg(`💥 Game Over! Score: ${score}`);
+  updateAllStats();
+}
+
+function changeDiff(){diff=document.getElementById('diff-select').value;newGame();}
+function swapBubbles(){if(!alive||gameOver||proj) return;[curColor,nxtColor]=[nxtColor,curColor];updateNextUI();}
+function randColor(){
+  const bc=[...new Set(grid.flatMap(r=>r||[]).filter(Boolean))];
+  if(!bc.length){const p=PALETTE.slice(0,DIFF[diff].nc);return p[Math.floor(Math.random()*p.length)];}
+  return bc[Math.floor(Math.random()*bc.length)];
+}
+
+// ═══════════════════════════════════════════════════════════
+//  UI
+// ═══════════════════════════════════════════════════════════
+function setMsg(m){if(m) document.getElementById('game-message').textContent=m;}
+
+function updateNextUI(){
+  if(!nxtColor) return;
+  document.getElementById('next-dot').style.background=nxtColor;
+  document.getElementById('next-name').textContent=CNAME[nxtColor]||nxtColor;
+}
+
+function updateTopBar(){
+  const cfg=DIFF[diff];
+  document.getElementById('ui-score').textContent=score;
+  document.getElementById('ui-shots').textContent=shots;
+  document.getElementById('ui-popped').textContent=popped;
+  document.getElementById('ui-level').textContent=level;
+  const pct=(shotsLeft/cfg.spd)*100;
+  const bar=document.getElementById('drop-fill');
+  bar.style.width=pct+'%';
+  bar.style.background=pct<30?'#ef4444':pct<60?'#f59e0b':'#22c55e';
+  document.getElementById('ui-countdown').textContent=shotsLeft+' misses';
+}
+
+function updateAllStats(){
+  updateTopBar();
+  document.getElementById('c-score').textContent=score;
+  document.getElementById('c-level').textContent=level;
+  document.getElementById('c-shots').textContent=shots;
+  document.getElementById('c-popped').textContent=popped;
+  document.getElementById('c-combo').textContent=bestCombo;
+  document.getElementById('c-acc').textContent=shots>0?(popped/shots).toFixed(1)+'/shot':'—';
+  let tot=0,fil=0;const cs=new Set();
+  grid.forEach(r=>r&&r.forEach(c=>{tot++;if(c){fil++;cs.add(c);}}));
+  const pct=tot>0?Math.round(fil/tot*100):0;
+  document.getElementById('c-fill').textContent=pct+'%';
+  document.getElementById('c-fillbar').style.width=pct+'%';
+  document.getElementById('c-remaining').textContent=fil;
+  document.getElementById('c-colors').textContent=cs.size;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  INPUT — canvas.width == clientWidth → no scale factor needed
+// ═══════════════════════════════════════════════════════════
+function evPos(e){
+  const rect=canvas.getBoundingClientRect();
+  return{x:e.clientX-rect.left, y:e.clientY-rect.top};
+}
+canvas.addEventListener('mousemove',e=>{const p=evPos(e);mX=p.x;mY=p.y;});
+canvas.addEventListener('click',    e=>{const p=evPos(e);shoot(p.x,p.y);});
+document.addEventListener('keydown',e=>{if(e.code==='Space'){e.preventDefault();swapBubbles();}});
+window.addEventListener('resize',   ()=>{if(alive){resizeCanvas();}});
+
+// ═══════════════════════════════════════════════════════════
+//  BOOT
+// ═══════════════════════════════════════════════════════════
+requestAnimationFrame(()=>requestAnimationFrame(()=>requestAnimationFrame(newGame)));
+</script>
+</body>
+</html>

@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Atar Noder Neder | Minesweeper</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        "primary": "#006d36", "on-primary": "#ffffff",
+        "primary-container": "#50c878", "on-primary-container": "#005025",
+        "secondary": "#516169", "secondary-container": "#d2e2ec",
+        "on-secondary-container": "#55656d",
+        "surface": "#f7f9fb", "surface-container": "#eceef0",
+        "on-surface": "#191c1e", "on-surface-variant": "#3e4a3f",
+        "outline": "#6e7a6e", "outline-variant": "#bdcabc",
+        "background": "#f7f9fb",
+      },
+      fontFamily: { "body": ["Plus Jakarta Sans"] },
+    },
+  },
+}
+</script>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: 'Plus Jakarta Sans', sans-serif; }
+  .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+  .hide-scrollbar::-webkit-scrollbar { display: none; }
+  .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  .glass-panel { background: rgba(255,255,255,0.65); backdrop-filter: blur(14px); border: 1px solid rgba(226,232,240,0.9); }
+
+  /* ── Cell styles ── */
+  .cell {
+    width: var(--cell-size, 44px);
+    height: var(--cell-size, 44px);
+    border-radius: max(6px, calc(var(--cell-size, 44px) * 0.22));
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    font-weight: 900;
+    font-size: var(--cell-font, 14px);
+    transition: all 0.12s ease;
+    user-select: none;
+    position: relative;
+  }
+  .cell-hidden {
+    background: white;
+    border: 1.5px solid #e2e8f0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .cell-hidden:hover { background: #f0fdf4; border-color: #86efac; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,109,54,0.15); }
+  .cell-revealed {
+    background: #f8fafc;
+    border: 1.5px solid #e2e8f0;
+    cursor: default;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .cell-flagged {
+    background: #fff7ed;
+    border: 1.5px solid #fed7aa;
+    box-shadow: 0 2px 8px rgba(251,146,60,0.2);
+  }
+  .cell-mine-hit {
+    background: #fef2f2 !important;
+    border: 1.5px solid #fca5a5 !important;
+    box-shadow: 0 0 0 3px rgba(239,68,68,0.2) !important;
+    animation: explode 0.3s ease;
+  }
+  .cell-mine-revealed {
+    background: #fef2f2;
+    border: 1.5px solid #fca5a5;
+    cursor: default;
+  }
+  .cell-win {
+    background: #f0fdf4 !important;
+    border: 1.5px solid #86efac !important;
+    animation: winPulse 0.4s ease;
+  }
+  @keyframes explode {
+    0% { transform: scale(1); } 40% { transform: scale(1.3); } 100% { transform: scale(1); }
+  }
+  @keyframes winPulse {
+    0% { transform: scale(1); } 50% { transform: scale(1.08); } 100% { transform: scale(1); }
+  }
+
+  /* Number colors */
+  .n1 { color: #006d36; }
+  .n2 { color: #1d4ed8; }
+  .n3 { color: #dc2626; }
+  .n4 { color: #7c3aed; }
+  .n5 { color: #c2410c; }
+  .n6 { color: #0891b2; }
+  .n7 { color: #374151; }
+  .n8 { color: #6b7280; }
+
+  .bar-fill { transition: width 0.5s ease; }
+
+  /* Modal */
+  #end-modal { display: none; }
+  #end-modal.show { display: flex; }
+</style>
+</head>
+<body class="bg-background text-on-surface h-screen overflow-hidden flex">
+
+<!-- ── Sidebar ── -->
+<aside dir="ltr" class="fixed left-0 top-0 h-full flex flex-col p-5 z-40 bg-slate-200 w-64 rounded-r-[32px] shadow-xl font-['Plus_Jakarta_Sans'] text-sm font-medium">
+  <div class="mb-8 px-2">
+    <h1 class="text-lg font-black text-emerald-800 tracking-tighter">Atar Noder Neder</h1>
+    <p class="text-slate-500 text-xs">Elite Member</p>
+  </div>
+  <nav class="flex-1 space-y-2">
+    <a href="index.html" class="flex items-center gap-3 px-4 py-2 text-slate-600 rounded-2xl hover:bg-slate-100 transition-colors">
+      <span class="material-symbols-outlined text-base">arrow_back</span>
+      <span>Go back to Lobby</span>
+    </a>
+    <a href="wordle.html" class="flex items-center gap-3 px-4 py-2 text-slate-600 rounded-2xl hover:bg-slate-100 transition-colors">
+      <span class="material-symbols-outlined text-base">match_word</span>
+      <span>Wordle</span>
+    </a>
+    <a href="yahtzee.html" class="flex items-center gap-3 px-4 py-2 text-slate-600 rounded-2xl hover:bg-slate-100 transition-colors">
+      <span class="material-symbols-outlined text-base">casino</span>
+      <span>Yahtzee</span>
+    </a>
+    <a href="minesweeper.html" class="flex items-center gap-3 px-4 py-2 bg-white text-emerald-700 rounded-2xl shadow-sm">
+      <span class="material-symbols-outlined text-base" style="font-variation-settings:'FILL' 1;">brightness_high</span>
+      <span>Minesweeper</span>
+    </a>
+    <a href="blackjack.html" class="flex items-center gap-3 px-4 py-2 text-slate-600 rounded-2xl hover:bg-slate-100 transition-colors">
+      <span class="material-symbols-outlined text-base" style="font-variation-settings:'FILL' 1;">playing_cards</span>
+      <span>BlackJack</span>
+    <a/>
+    <a href="bubbleshooter.html" class="flex flex-row items-center justify-start gap-3 px-4 py-2 text-slate-600 rounded-2xl hover:bg-slate-100 transition-colors w-full text-left">
+      <span class="material-symbols-outlined text-base" style="font-variation-settings:'FILL' 1;">bubble_chart</span>
+      <span>Bubble Shooter</span>
+    </a>
+    <a href="tetris.html" class="flex flex-row items-center gap-3 px-4 py-2 text-slate-600 rounded-2xl hover:bg-slate-100 transition-colors w-full text-left">
+      <span class="material-symbols-outlined text-base" style="font-variation-settings:'FILL' 1;">view_agenda</span>
+      <span>Tetris</span>
+    </a>
+  </nav>
+</aside>
+
+<!-- ── Main ── -->
+<main class="ml-64 flex-1 flex flex-col h-screen overflow-hidden">
+
+  <!-- Header -->
+  <header dir="rtl" class="flex justify-between items-center w-full px-6 h-16 bg-slate-50 backdrop-blur-xl sticky top-0 z-30 shrink-0 border-b border-slate-100">
+      <div class="w-full max-w-7xl flex justify-between items-center px-12">
+          <div class="flex items-center gap-3 text-primary font-bold">
+              <span class="material-symbols-outlined">brightness_high</span>
+              <span class="text-lg">Minesweeper</span>
+          </div>
+          <div id="game-message" class="text-sm font-bold text-emerald-700"></div>
+          <div class="text-sm font-bold text-emerald-900">Atar Noder Neder - funded by AIPAC</div>
+      </div>
+  </header>
+
+  <!-- 3-column content -->
+  <div class="flex-1 p-5 grid grid-cols-12 gap-5 overflow-hidden">
+
+    <!-- LEFT: How to Play -->
+    <aside class="col-span-3 glass-panel rounded-[28px] p-6 flex flex-col gap-4 overflow-y-auto hide-scrollbar">
+      <div class="flex items-center gap-2 text-emerald-800 font-black tracking-tighter uppercase text-xs">
+        <span class="material-symbols-outlined text-sm">help_outline</span>
+        <span>How to Play</span>
+      </div>
+
+      <!-- Steps -->
+      <div class="flex flex-col gap-4">
+        <div class="flex gap-3">
+          <div class="w-7 h-7 shrink-0 rounded-full bg-primary flex items-center justify-center text-[11px] font-black text-white">1</div>
+          <div>
+            <p class="text-xs font-bold text-on-surface mb-0.5">Reveal a Tile</p>
+            <p class="text-[11px] leading-relaxed text-on-surface-variant">Left-click any tile to reveal it. The first click is always safe — mines are placed after it.</p>
+          </div>
+        </div>
+        <div class="flex gap-3">
+          <div class="w-7 h-7 shrink-0 rounded-full bg-primary flex items-center justify-center text-[11px] font-black text-white">2</div>
+          <div>
+            <p class="text-xs font-bold text-on-surface mb-0.5">Read the Numbers</p>
+            <p class="text-[11px] leading-relaxed text-on-surface-variant">Each number tells you how many mines are in the 8 surrounding tiles. Use this to deduce safe spots.</p>
+          </div>
+        </div>
+        <div class="flex gap-3">
+          <div class="w-7 h-7 shrink-0 rounded-full bg-primary flex items-center justify-center text-[11px] font-black text-white">3</div>
+          <div>
+            <p class="text-xs font-bold text-on-surface mb-0.5">Place Flags</p>
+            <p class="text-[11px] leading-relaxed text-on-surface-variant">Right-click (or long-press on mobile) to place a 🚩 flag on a tile you suspect is a mine. Flag all mines to win!</p>
+          </div>
+        </div>
+        <div class="flex gap-3">
+          <div class="w-7 h-7 shrink-0 rounded-full bg-primary flex items-center justify-center text-[11px] font-black text-white">4</div>
+          <div>
+            <p class="text-xs font-bold text-on-surface mb-0.5">Win the Game</p>
+            <p class="text-[11px] leading-relaxed text-on-surface-variant">Reveal all safe tiles without hitting a mine. You win when every non-mine cell is uncovered.</p>
+          </div>
+        </div>
+      </div>
+
+      <hr class="border-slate-200"/>
+
+      <!-- Tile legend -->
+      <div>
+        <p class="text-[10px] font-black uppercase tracking-widest text-emerald-800 mb-3">Tile Guide</p>
+        <div class="flex flex-col gap-2.5">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-white border-2 border-slate-200 shadow-sm shrink-0"></div>
+            <div>
+              <p class="text-xs font-bold text-on-surface">Hidden</p>
+              <p class="text-[11px] text-on-surface-variant">Unrevealed tile — click to uncover</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center text-sm font-black text-[#006d36] shrink-0">3</div>
+            <div>
+              <p class="text-xs font-bold text-on-surface">Number</p>
+              <p class="text-[11px] text-on-surface-variant">Count of adjacent mines</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center text-base shrink-0"></div>
+            <div>
+              <p class="text-xs font-bold text-on-surface">Empty</p>
+              <p class="text-[11px] text-on-surface-variant">No adjacent mines — auto-expands</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-base shrink-0">🚩</div>
+            <div>
+              <p class="text-xs font-bold text-on-surface">Flagged</p>
+              <p class="text-[11px] text-on-surface-variant">Right-click to mark a suspected mine</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-red-50 border border-red-200 flex items-center justify-center text-base shrink-0">💣</div>
+            <div>
+              <p class="text-xs font-bold text-on-surface">Mine</p>
+              <p class="text-[11px] text-on-surface-variant">Hit this and it's game over!</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <hr class="border-slate-200"/>
+
+      <!-- Tips -->
+      <div>
+        <p class="text-[10px] font-black uppercase tracking-widest text-emerald-800 mb-2">Strategy Tips</p>
+        <ul class="flex flex-col gap-2">
+          <li class="flex items-start gap-2 text-[11px] text-on-surface-variant leading-relaxed">
+            <span class="text-emerald-500 font-black shrink-0 mt-0.5">→</span>
+            Start from a corner — corners have fewer neighbors, giving you more info early.
+          </li>
+          <li class="flex items-start gap-2 text-[11px] text-on-surface-variant leading-relaxed">
+            <span class="text-emerald-500 font-black shrink-0 mt-0.5">→</span>
+            If a <span class="font-bold text-on-surface mx-0.5">1</span> tile has exactly 1 hidden neighbor, that neighbor is definitely a mine.
+          </li>
+          <li class="flex items-start gap-2 text-[11px] text-on-surface-variant leading-relaxed">
+            <span class="text-emerald-500 font-black shrink-0 mt-0.5">→</span>
+            Flag confidently — the mine counter helps you track remaining mines.
+          </li>
+          <li class="flex items-start gap-2 text-[11px] text-on-surface-variant leading-relaxed">
+            <span class="text-emerald-500 font-black shrink-0 mt-0.5">→</span>
+            When stuck, count: if hidden neighbors = number shown, they're <span class="font-bold text-on-surface mx-0.5">all</span> mines.
+          </li>
+          <li class="flex items-start gap-2 text-[11px] text-on-surface-variant leading-relaxed">
+            <span class="text-emerald-500 font-black shrink-0 mt-0.5">→</span>
+            Empty (blank) reveals cascade automatically — use them to open large areas fast.
+          </li>
+        </ul>
+      </div>
+
+      <hr class="border-slate-200"/>
+
+      <!-- Difficulty info -->
+      <div>
+        <p class="text-[10px] font-black uppercase tracking-widest text-emerald-800 mb-2">Difficulty Levels</p>
+        <div class="flex flex-col gap-2">
+          <div class="flex justify-between items-center bg-emerald-50 rounded-xl px-3 py-2">
+            <span class="text-xs font-bold text-emerald-800">Easy</span>
+            <span class="text-[11px] text-on-surface-variant">9×9 · 10 mines</span>
+          </div>
+          <div class="flex justify-between items-center bg-amber-50 rounded-xl px-3 py-2">
+            <span class="text-xs font-bold text-amber-800">Medium</span>
+            <span class="text-[11px] text-on-surface-variant">16×16 · 40 mines</span>
+          </div>
+          <div class="flex justify-between items-center bg-red-50 rounded-xl px-3 py-2">
+            <span class="text-xs font-bold text-red-800">Hard</span>
+            <span class="text-[11px] text-on-surface-variant">16×30 · 99 mines</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- CENTER: Board -->
+    <section class="col-span-6 flex flex-col items-center justify-center gap-4 overflow-hidden">
+
+      <!-- Stats bar -->
+      <div class="glass-panel rounded-2xl px-6 py-3 flex items-center gap-8 w-full justify-center">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-base text-red-500" style="font-variation-settings:'FILL' 1;">flag</span>
+          <div>
+            <p class="text-[10px] font-black uppercase text-on-surface-variant">Mines Left</p>
+            <p id="mines-counter" class="text-xl font-black text-on-surface leading-none">10</p>
+          </div>
+        </div>
+        <div class="w-px h-8 bg-slate-200"></div>
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-base text-emerald-600">schedule</span>
+          <div>
+            <p class="text-[10px] font-black uppercase text-on-surface-variant">Time</p>
+            <p id="timer-display" class="text-xl font-black text-on-surface leading-none">0:00</p>
+          </div>
+        </div>
+        <div class="w-px h-8 bg-slate-200"></div>
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-base text-slate-500">grid_view</span>
+          <div>
+            <p class="text-[10px] font-black uppercase text-on-surface-variant">Revealed</p>
+            <p id="revealed-counter" class="text-xl font-black text-on-surface leading-none">0</p>
+          </div>
+        </div>
+        <div class="w-px h-8 bg-slate-200"></div>
+        <button onclick="newGame()" class="flex items-center gap-2 px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-full font-bold text-xs uppercase tracking-widest transition-colors">
+          <span class="material-symbols-outlined text-base">refresh</span>
+          Restart
+        </button>
+      </div>
+
+      <!-- Board container — scrollable for large grids -->
+      <div class="flex-1 overflow-auto hide-scrollbar flex items-center justify-center w-full">
+        <div id="board" class="glass-panel rounded-[24px] p-4 shadow-xl"></div>
+      </div>
+    </section>
+
+    <!-- RIGHT: Facts + Game Stats -->
+    <aside class="col-span-3 flex flex-col gap-4 overflow-y-auto hide-scrollbar">
+
+      <!-- World Facts -->
+
+      <!-- Game Stats -->
+    <div class="glass-panel rounded-[28px] p-6 flex flex-col gap-4">
+        <div id="game-message" class="text-sm font-bold text-emerald-700"></div>
+        <div class="flex items-center gap-3">
+        <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Difficulty</label>
+        <select id="difficulty-select" onchange="changeDifficulty()"
+            class="text-xs font-bold bg-slate-100 text-slate-700 border-none rounded-full px-3 py-1.5 focus:outline-none cursor-pointer">
+            <option value="easy">Easy (9×9, 10💣)</option>
+            <option value="medium">Medium (16×16, 40💣)</option>
+            <option value="hard">Hard (16×30, 99💣)</option>
+        </select>
+        </div>
+        <button onclick="newGame()" class="px-5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-full font-bold text-xs uppercase tracking-widest transition-colors">
+            New Game
+        </button>
+        
+        <div class="flex items-center gap-2 text-emerald-800 font-black tracking-tighter uppercase text-xs">
+          <span class="material-symbols-outlined text-sm">bar_chart</span>
+          <span>Game Stats</span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div class="bg-emerald-50 rounded-2xl p-3 text-center">
+            <p id="stat-played" class="text-2xl font-black text-emerald-800">0</p>
+            <p class="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Played</p>
+          </div>
+          <div class="bg-emerald-50 rounded-2xl p-3 text-center">
+            <p id="stat-wins" class="text-2xl font-black text-emerald-800">0</p>
+            <p class="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Wins</p>
+          </div>
+          <div class="bg-emerald-50 rounded-2xl p-3 text-center">
+            <p id="stat-winpct" class="text-2xl font-black text-emerald-800">—</p>
+            <p class="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Win %</p>
+          </div>
+          <div class="bg-emerald-50 rounded-2xl p-3 text-center">
+            <p id="stat-best" class="text-2xl font-black text-emerald-800">—</p>
+            <p class="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Best Time</p>
+          </div>
+        </div>
+
+        <hr class="border-slate-200"/>
+
+        <!-- Current game live stats -->
+        <div>
+          <p class="text-[10px] font-black uppercase tracking-widest text-emerald-800 mb-3">Current Game</p>
+          <div class="flex flex-col gap-2">
+            <div class="flex justify-between items-center">
+              <span class="text-xs font-bold text-on-surface-variant">Progress</span>
+              <span id="curr-progress-txt" class="text-xs font-black text-emerald-800">0%</span>
+            </div>
+            <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+              <div id="curr-progress-bar" class="h-full bg-emerald-500 rounded-full bar-fill" style="width:0%"></div>
+            </div>
+            <div class="flex justify-between items-center mt-1">
+              <span class="text-xs font-bold text-on-surface-variant">💣 Mines flagged</span>
+              <span id="curr-flagged" class="text-xs font-black text-on-surface">0</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-xs font-bold text-on-surface-variant">✅ Safe tiles revealed</span>
+              <span id="curr-revealed" class="text-xs font-black text-on-surface">0</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-xs font-bold text-on-surface-variant">🕵️ Remaining hidden</span>
+              <span id="curr-hidden" class="text-xs font-black text-on-surface">0</span>
+            </div>
+          </div>
+        </div>
+
+        <hr class="border-slate-200"/>
+
+        <!-- Best times per difficulty -->
+        <div>
+          <p class="text-[10px] font-black uppercase tracking-widest text-emerald-800 mb-2">Best Times</p>
+          <div class="flex flex-col gap-1.5">
+            <div class="flex justify-between items-center">
+              <span class="text-[11px] font-bold text-on-surface-variant">Easy</span>
+              <span id="best-easy" class="text-[11px] font-black text-emerald-700">—</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-[11px] font-bold text-on-surface-variant">Medium</span>
+              <span id="best-medium" class="text-[11px] font-black text-emerald-700">—</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-[11px] font-bold text-on-surface-variant">Hard</span>
+              <span id="best-hard" class="text-[11px] font-black text-emerald-700">—</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<!-- End Modal -->
+<div id="end-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 items-center justify-center">
+  <div class="bg-white rounded-[32px] p-10 shadow-2xl max-w-sm w-full mx-4 text-center">
+    <div id="modal-emoji" class="text-6xl mb-3">💣</div>
+    <h2 id="modal-title" class="text-4xl font-black text-emerald-900 tracking-tighter mb-1"></h2>
+    <p id="modal-subtitle" class="text-on-surface-variant text-sm mb-6"></p>
+    <div class="bg-slate-50 rounded-2xl p-5 mb-5 space-y-2 text-left">
+      <div class="flex justify-between text-sm font-bold">
+        <span class="text-on-surface-variant">Time</span>
+        <span id="modal-time" class="text-on-surface">—</span>
+      </div>
+      <div class="flex justify-between text-sm font-bold">
+        <span class="text-on-surface-variant">Tiles revealed</span>
+        <span id="modal-revealed" class="text-on-surface">—</span>
+      </div>
+      <div class="flex justify-between text-sm font-bold">
+        <span class="text-on-surface-variant">Flags placed</span>
+        <span id="modal-flags" class="text-on-surface">—</span>
+      </div>
+    </div>
+    <p id="modal-record" class="text-xs font-black text-emerald-600 mb-5"></p>
+    <button onclick="newGame()" class="w-full py-4 bg-primary text-white rounded-full font-black text-sm uppercase tracking-widest hover:opacity-90 transition-opacity">
+      🔄 Play Again
+    </button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+//  GAME CONFIG
+// ═══════════════════════════════════════════════
+const DIFFICULTIES = {
+  easy:   { rows: 9,  cols: 9,  mines: 10 },
+  medium: { rows: 16, cols: 16, mines: 40 },
+  hard:   { rows: 16, cols: 30, mines: 99 },
+};
+
+let cfg = DIFFICULTIES.easy;
+let ROWS, COLS, TOTAL_MINES;
+
+// Board state
+let board = [];       // 2D array of cell objects
+let gameState = "idle"; // idle | playing | won | lost
+let firstClick = true;
+let flagCount = 0;
+let revealedCount = 0;
+let timerInterval = null;
+let elapsedSeconds = 0;
+
+// Persistent stats
+let stats = { played: 0, wins: 0, bestTimes: { easy: null, medium: null, hard: null } };
+let currentDifficulty = "easy";
+
+// ═══════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════
+function newGame() {
+  const sel = document.getElementById("difficulty-select").value;
+  currentDifficulty = sel;
+  cfg = DIFFICULTIES[sel];
+  ROWS = cfg.rows; COLS = cfg.cols; TOTAL_MINES = cfg.mines;
+
+  stopTimer();
+  elapsedSeconds = 0;
+  firstClick = true;
+  flagCount = 0;
+  revealedCount = 0;
+  gameState = "idle";
+
+  document.getElementById("end-modal").classList.remove("show");
+  document.getElementById("game-message").textContent = "";
+  document.getElementById("timer-display").textContent = "0:00";
+  document.getElementById("mines-counter").textContent = TOTAL_MINES;
+  document.getElementById("revealed-counter").textContent = "0";
+
+  // Init board data
+  board = [];
+  for (let r = 0; r < ROWS; r++) {
+    board[r] = [];
+    for (let c = 0; c < COLS; c++) {
+      board[r][c] = { mine: false, revealed: false, flagged: false, adjacent: 0 };
+    }
+  }
+
+  renderBoard();
+  updateCurrentStats();
+}
+
+function changeDifficulty() { newGame(); }
+
+// ═══════════════════════════════════════════════
+//  MINE PLACEMENT (after first click)
+// ═══════════════════════════════════════════════
+function placeMines(safeR, safeC) {
+  const forbidden = new Set();
+  for (let dr = -1; dr <= 1; dr++)
+    for (let dc = -1; dc <= 1; dc++) {
+      const nr = safeR + dr, nc = safeC + dc;
+      if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS)
+        forbidden.add(nr * COLS + nc);
+    }
+
+  let placed = 0;
+  while (placed < TOTAL_MINES) {
+    const r = Math.floor(Math.random() * ROWS);
+    const c = Math.floor(Math.random() * COLS);
+    const key = r * COLS + c;
+    if (!board[r][c].mine && !forbidden.has(key)) {
+      board[r][c].mine = true;
+      placed++;
+    }
+  }
+
+  // Calculate adjacent counts
+  for (let r = 0; r < ROWS; r++)
+    for (let c = 0; c < COLS; c++)
+      if (!board[r][c].mine)
+        board[r][c].adjacent = countAdjacentMines(r, c);
+}
+
+function countAdjacentMines(r, c) {
+  let count = 0;
+  forNeighbors(r, c, (nr, nc) => { if (board[nr][nc].mine) count++; });
+  return count;
+}
+
+function forNeighbors(r, c, fn) {
+  for (let dr = -1; dr <= 1; dr++)
+    for (let dc = -1; dc <= 1; dc++) {
+      if (dr === 0 && dc === 0) continue;
+      const nr = r + dr, nc = c + dc;
+      if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS) fn(nr, nc);
+    }
+}
+
+// ═══════════════════════════════════════════════
+//  RENDER BOARD
+// ═══════════════════════════════════════════════
+function calcCellSize() {
+  // Available area: center column is col-span-6 of the 12-col grid
+  // Subtract sidebar (256px), padding (2×20px), side panels (2 × ~25% each)
+  const totalW = window.innerWidth;
+  const sidebarW = 256;
+  const pagePad = 40;   // p-5 on each side = 20px×2
+  const panelPct = 0.25 * 2; // left+right panels each ~3/12 = 25%
+  const availW = (totalW - sidebarW - pagePad) * (1 - panelPct) - 40; // 40 = gaps
+
+  // Available height: full height minus header (64px), stats bar (~64px), padding
+  const availH = window.innerHeight - 64 - 72 - 60;
+
+  const gap = 4;
+  const maxByWidth  = Math.floor((availW  - gap * (COLS - 1)) / COLS);
+  const maxByHeight = Math.floor((availH  - gap * (ROWS - 1)) / ROWS);
+
+  // Clamp between 20px (readable) and 44px (comfortable)
+  return Math.min(44, Math.max(20, maxByWidth, 0), Math.max(20, maxByHeight, 0),
+                  Math.min(maxByWidth, maxByHeight));
+}
+
+function renderBoard() {
+  const container = document.getElementById("board");
+  container.innerHTML = "";
+
+  const size = calcCellSize();
+  const gap  = size >= 36 ? 4 : size >= 28 ? 3 : 2;
+  const fontSize = size >= 36 ? 14 : size >= 28 ? 11 : 9;
+
+  // Inject dynamic cell size as CSS variable
+  document.documentElement.style.setProperty("--cell-size", size + "px");
+  document.documentElement.style.setProperty("--cell-font",  fontSize + "px");
+
+  container.style.display = "grid";
+  container.style.gridTemplateColumns = `repeat(${COLS}, ${size}px)`;
+  container.style.gap = gap + "px";
+
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const cell = document.createElement("div");
+      cell.className = "cell";
+      cell.dataset.r = r;
+      cell.dataset.c = c;
+      styleCell(cell, r, c, false);
+      cell.addEventListener("click", onLeftClick);
+      cell.addEventListener("contextmenu", onRightClick);
+      let pressTimer;
+      cell.addEventListener("touchstart", (e) => { pressTimer = setTimeout(() => { e.preventDefault(); toggleFlag(r, c); }, 400); }, { passive: false });
+      cell.addEventListener("touchend", () => clearTimeout(pressTimer));
+      container.appendChild(cell);
+    }
+  }
+}
+
+// Re-render on resize so it always fits
+window.addEventListener("resize", () => { if (ROWS) renderBoard(); });
+
+function styleCell(el, r, c, exploded) {
+  const cell = board[r][c];
+  el.textContent = "";
+  el.className = "cell";
+
+  if (gameState === "lost" && cell.mine && !cell.flagged) {
+    el.classList.add(exploded ? "cell-mine-hit" : "cell-mine-revealed");
+    el.textContent = "💣";
+    return;
+  }
+  if (cell.flagged) {
+    el.classList.add("cell-flagged");
+    el.textContent = "🚩";
+    return;
+  }
+  if (!cell.revealed) {
+    el.classList.add("cell-hidden");
+    if (gameState === "won") el.classList.add("cell-win");
+    return;
+  }
+  // Revealed
+  el.classList.add(gameState === "won" ? "cell-win" : "cell-revealed");
+  if (cell.adjacent > 0) {
+    el.textContent = cell.adjacent;
+    el.classList.add(`n${cell.adjacent}`);
+  }
+}
+
+function refreshCell(r, c, exploded = false) {
+  const el = getCellEl(r, c);
+  if (el) styleCell(el, r, c, exploded);
+}
+
+function getCellEl(r, c) {
+  return document.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);
+}
+
+function refreshAll() {
+  for (let r = 0; r < ROWS; r++)
+    for (let c = 0; c < COLS; c++)
+      refreshCell(r, c);
+}
+
+// ═══════════════════════════════════════════════
+//  CLICK HANDLERS
+// ═══════════════════════════════════════════════
+function onLeftClick(e) {
+  e.preventDefault();
+  if (gameState === "won" || gameState === "lost") return;
+  const r = +e.currentTarget.dataset.r;
+  const c = +e.currentTarget.dataset.c;
+  if (board[r][c].flagged || board[r][c].revealed) return;
+
+  if (firstClick) {
+    firstClick = false;
+    placeMines(r, c);
+    // Recalculate adjacent after mine placement
+    for (let rr = 0; rr < ROWS; rr++)
+      for (let cc = 0; cc < COLS; cc++)
+        if (!board[rr][cc].mine)
+          board[rr][cc].adjacent = countAdjacentMines(rr, cc);
+    gameState = "playing";
+    startTimer();
+  }
+
+  if (board[r][c].mine) {
+    board[r][c].revealed = true;
+    gameState = "lost";
+    stopTimer();
+    refreshCell(r, c, true);
+    revealAllMines();
+    stats.played++;
+    updateStatsUI();
+    setTimeout(() => showEndModal(false), 500);
+    return;
+  }
+
+  floodReveal(r, c);
+  checkWin();
+  updateCounters();
+  updateCurrentStats();
+}
+
+function onRightClick(e) {
+  e.preventDefault();
+  if (gameState === "won" || gameState === "lost") return;
+  const r = +e.currentTarget.dataset.r;
+  const c = +e.currentTarget.dataset.c;
+  toggleFlag(r, c);
+}
+
+function toggleFlag(r, c) {
+  if (board[r][c].revealed) return;
+  if (board[r][c].flagged) {
+    board[r][c].flagged = false;
+    flagCount--;
+  } else {
+    if (flagCount >= TOTAL_MINES) return; // can't place more flags than mines
+    board[r][c].flagged = true;
+    flagCount++;
+  }
+  refreshCell(r, c);
+  document.getElementById("mines-counter").textContent = TOTAL_MINES - flagCount;
+  updateCurrentStats();
+}
+
+// ═══════════════════════════════════════════════
+//  FLOOD FILL REVEAL
+// ═══════════════════════════════════════════════
+function floodReveal(r, c) {
+  if (r < 0 || r >= ROWS || c < 0 || c >= COLS) return;
+  const cell = board[r][c];
+  if (cell.revealed || cell.flagged || cell.mine) return;
+  cell.revealed = true;
+  revealedCount++;
+  refreshCell(r, c);
+  if (cell.adjacent === 0)
+    forNeighbors(r, c, (nr, nc) => floodReveal(nr, nc));
+}
+
+// ═══════════════════════════════════════════════
+//  WIN / LOSE
+// ═══════════════════════════════════════════════
+function checkWin() {
+  const safeCells = ROWS * COLS - TOTAL_MINES;
+  if (revealedCount >= safeCells) {
+    gameState = "won";
+    stopTimer();
+    stats.played++;
+    stats.wins++;
+    // Record best time
+    const diff = currentDifficulty;
+    if (!stats.bestTimes[diff] || elapsedSeconds < stats.bestTimes[diff])
+      stats.bestTimes[diff] = elapsedSeconds;
+    updateStatsUI();
+    refreshAll();
+    setTimeout(() => showEndModal(true), 300);
+  }
+}
+
+function revealAllMines() {
+  for (let r = 0; r < ROWS; r++)
+    for (let c = 0; c < COLS; c++)
+      if (board[r][c].mine && !board[r][c].flagged)
+        refreshCell(r, c, false);
+}
+
+// ═══════════════════════════════════════════════
+//  TIMER
+// ═══════════════════════════════════════════════
+function startTimer() {
+  elapsedSeconds = 0;
+  timerInterval = setInterval(() => {
+    elapsedSeconds++;
+    document.getElementById("timer-display").textContent = formatTime(elapsedSeconds);
+  }, 1000);
+}
+
+function stopTimer() {
+  clearInterval(timerInterval);
+  timerInterval = null;
+}
+
+function formatTime(s) {
+  const m = Math.floor(s / 60);
+  const sec = s % 60;
+  return `${m}:${sec.toString().padStart(2, "0")}`;
+}
+
+// ═══════════════════════════════════════════════
+//  UI UPDATES
+// ═══════════════════════════════════════════════
+function updateCounters() {
+  document.getElementById("revealed-counter").textContent = revealedCount;
+  document.getElementById("mines-counter").textContent = TOTAL_MINES - flagCount;
+}
+
+function updateCurrentStats() {
+  const safeCells = ROWS * COLS - TOTAL_MINES;
+  const pct = safeCells > 0 ? Math.round((revealedCount / safeCells) * 100) : 0;
+  document.getElementById("curr-progress-txt").textContent = pct + "%";
+  document.getElementById("curr-progress-bar").style.width = pct + "%";
+  document.getElementById("curr-flagged").textContent = flagCount;
+  document.getElementById("curr-revealed").textContent = revealedCount;
+  document.getElementById("curr-hidden").textContent = ROWS * COLS - revealedCount - flagCount;
+}
+
+function updateStatsUI() {
+  document.getElementById("stat-played").textContent = stats.played;
+  document.getElementById("stat-wins").textContent = stats.wins;
+  document.getElementById("stat-winpct").textContent = stats.played > 0
+    ? Math.round((stats.wins / stats.played) * 100) + "%" : "—";
+  const bt = stats.bestTimes[currentDifficulty];
+  document.getElementById("stat-best").textContent = bt !== null ? formatTime(bt) : "—";
+  document.getElementById("best-easy").textContent   = stats.bestTimes.easy   !== null ? formatTime(stats.bestTimes.easy)   : "—";
+  document.getElementById("best-medium").textContent = stats.bestTimes.medium !== null ? formatTime(stats.bestTimes.medium) : "—";
+  document.getElementById("best-hard").textContent   = stats.bestTimes.hard   !== null ? formatTime(stats.bestTimes.hard)   : "—";
+}
+
+function showEndModal(won) {
+  const modal = document.getElementById("end-modal");
+  document.getElementById("modal-emoji").textContent   = won ? "🎉" : "💣";
+  document.getElementById("modal-title").textContent   = won ? "You Win!" : "Boom!";
+  document.getElementById("modal-subtitle").textContent = won
+    ? "כל התאים הבטוחים חשופים — כישרון אמיתי!"
+    : "פגעת במוקש. נסה שוב!";
+  document.getElementById("modal-time").textContent     = formatTime(elapsedSeconds);
+  document.getElementById("modal-revealed").textContent = revealedCount;
+  document.getElementById("modal-flags").textContent    = flagCount;
+
+  // New record?
+  const bt = stats.bestTimes[currentDifficulty];
+  const isRecord = won && bt !== null && bt === elapsedSeconds && stats.wins > 0;
+  document.getElementById("modal-record").textContent = isRecord ? "🏆 New best time!" : "";
+
+  modal.classList.add("show");
+}
+
+function setMessage(msg) {
+  document.getElementById("game-message").textContent = msg;
+}
+
+// ═══════════════════════════════════════════════
+//  BOOT
+// ═══════════════════════════════════════════════
+newGame();
+</script>
+</body>
+</html>
