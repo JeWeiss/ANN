@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Atar Noder Neder | World Map</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        "primary": "#006d36",
+        "surface": "#f7f9fb",
+        "on-surface": "#191c1e",
+        "background": "#f7f9fb",
+      },
+      fontFamily: { "body": ["Plus Jakarta Sans"] },
+    },
+  },
+}
+</script>
+<style>
+  body { font-family: 'Plus Jakarta Sans', sans-serif; }
+  .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+  .hide-scrollbar::-webkit-scrollbar { display: none; }
+  .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  .glass-panel { background: rgba(255,255,255,0.75); backdrop-filter: blur(14px); border: 1px solid rgba(226,232,240,0.9); }
+
+  /* MAP */
+  #world-map-svg {
+    width: 100%; height: 100%;
+    display: block;
+  }
+  #world-map-svg path {
+    fill: #c8e6c9;
+    stroke: #ffffff;
+    stroke-width: 0.4;
+    stroke-linejoin: round;
+    transition: fill 0.4s ease;
+    cursor: default;
+    vector-effect: non-scaling-stroke;
+  }
+  #world-map-svg path:hover { fill: #a5d6a7; }
+  #world-map-svg path.found {
+    fill: #006d36 !important;
+    stroke: #ffffff;
+    filter: drop-shadow(0 0 3px rgba(0,109,54,0.4));
+  }
+  #world-map-svg path.just-found {
+    animation: popIn 0.5s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  @keyframes popIn {
+    0%   { fill: #fbbf24; }
+    60%  { fill: #22c55e; }
+    100% { fill: #006d36; }
+  }
+  .ocean-bg { fill: #e8f4fd; }
+
+  /* INPUT */
+  #country-input {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 16px; font-weight: 600;
+    outline: none; background: transparent;
+    width: 100%; color: #191c1e;
+    caret-color: #006d36;
+  }
+  #country-input::placeholder { color: #94a3b8; font-weight: 400; }
+  #country-input:disabled { cursor: not-allowed; }
+
+  /* BUTTONS */
+  .action-btn {
+    border-radius: 9999px; font-weight: 700; font-size: 13px;
+    padding: 9px 22px; transition: all 0.15s; border: none;
+    cursor: pointer; letter-spacing: 0.02em; display: flex;
+    align-items: center; justify-content: center; gap: 6px;
+  }
+  .btn-green { background: #006d36; color: white; box-shadow: 0 4px 14px rgba(0,109,54,0.3); }
+  .btn-green:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(0,109,54,0.4); }
+  .btn-green:active { transform: scale(0.97); }
+  .btn-slate { background: #f1f5f9; color: #475569; }
+  .btn-slate:hover { background: #e2e8f0; }
+  .btn-red { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+  .btn-red:hover { background: #fee2e2; }
+
+  /* TAGS */
+  .country-tag {
+    display: inline-flex; align-items: center; gap: 3px;
+    background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;
+    font-size: 11px; font-weight: 600;
+    padding: 2px 9px; border-radius: 99px;
+    animation: tagIn 0.25s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  @keyframes tagIn {
+    from { opacity: 0; transform: scale(0.7); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+
+  /* SHAKE */
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    20% { transform: translateX(-7px); }
+    40% { transform: translateX(7px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+  }
+  .shake { animation: shake 0.35s ease; }
+
+  /* MODAL */
+  #end-modal { display: none; }
+  #end-modal.open { display: flex; }
+  @keyframes modalIn {
+    from { opacity: 0; transform: scale(0.88) translateY(24px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  .modal-card { animation: modalIn 0.35s cubic-bezier(0.34,1.56,0.64,1) both; }
+
+  /* PROGRESS */
+  #progress-bar { transition: width 0.6s cubic-bezier(0.4,0,0.2,1); }
+
+  /* LOADING */
+  .map-loading-dot {
+    width: 8px; height: 8px; border-radius: 50%; background: #006d36;
+    animation: bounce 1.2s infinite;
+  }
+  .map-loading-dot:nth-child(2) { animation-delay: 0.2s; }
+  .map-loading-dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce {
+    0%,80%,100% { transform: scale(0.8); opacity: 0.4; }
+    40% { transform: scale(1.2); opacity: 1; }
+  }
+
+  /* STAT PILL */
+  .stat-row { display: flex; align-items: center; justify-content: space-between; }
+  .stat-label { font-size: 12px; color: #64748b; font-weight: 500; }
+  .stat-val { font-size: 14px; font-weight: 800; }
+</style>
+<script src="navbar.js" defer></script>
+<script src="header.js" defer></script>
+</head>
+<body class="bg-background text-on-surface h-screen overflow-hidden flex">
+
+<my-navbar></my-navbar>
+
+<main class="ml-64 flex-1 flex flex-col h-screen overflow-hidden">
+  <site-header title="World Map" span="public"></site-header>
+
+  <div class="flex-1 flex gap-4 p-4 overflow-hidden">
+
+    <!-- LEFT: Map + Input -->
+    <div class="flex-1 flex flex-col gap-3 overflow-hidden min-w-0">
+        <div class="glass-panel rounded-[16px] px-4 py-3 flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center flex-shrink-0">
+          <span class="material-symbols-outlined text-emerald-600" style="font-size:18px">travel_explore</span>
+        </div>
+        <input
+          id="country-input"
+          style="font-serif"
+          type="text"
+          placeholder="Type a country name and press Enter..."
+          autocomplete="off"
+          spellcheck="false"
+          disabled
+        />
+        <div id="input-feedback" class="text-xs font-bold whitespace-nowrap min-w-[90px] text-right"></div>
+        <kbd class="hidden sm:flex items-center gap-1 px-2 py-1 bg-slate-100 text-slate-400 text-[10px] font-bold rounded-md border border-slate-200 flex-shrink-0">
+          Enter ↵
+        </kbd>
+      </div>
+
+        <!-- Map -->
+        <div class="glass-panel rounded-[22px] flex-1 overflow-hidden relative">
+
+        <!-- Placeholder -->
+        <div id="map-placeholder" class="absolute inset-0 flex items-center justify-center flex-col gap-4 z-10 rounded-[22px]" style="background:rgba(248,250,252,0.95)">
+          <div class="w-16 h-16 rounded-2xl bg-emerald-50 flex items-center justify-center">
+            <span class="material-symbols-outlined text-4xl text-emerald-400">public</span>
+          </div>
+          <div class="text-center">
+            <p class="text-sm font-bold text-slate-600">Ready to test your geography?</p>
+            <p class="text-xs text-slate-400 mt-1">Click "Start Game" to load the map</p>
+          </div>
+        </div>
+
+        <!-- Loading -->
+        <div id="map-loading" class="absolute inset-0 hidden items-center justify-center flex-col gap-4 z-10 rounded-[22px]" style="background:rgba(248,250,252,0.95)">
+          <div class="flex gap-2">
+            <div class="map-loading-dot"></div>
+            <div class="map-loading-dot"></div>
+            <div class="map-loading-dot"></div>
+          </div>
+          <p class="text-xs font-semibold text-slate-400">Loading world map...</p>
+        </div>
+
+        <!-- SVG Container -->
+        <div id="map-container" class="w-full h-full opacity-0 transition-opacity duration-700 overflow-hidden rounded-[22px]" style="background:#e8f4fd;"></div>
+      </div>
+
+      <!-- Input bar -->
+      
+    </div>
+
+    <!-- RIGHT: Control Panel -->
+    <div class="w-64 flex flex-col gap-3 flex-shrink-0">
+
+      <!-- Timer + Score -->
+      <div class="glass-panel rounded-[22px] p-4 flex flex-col gap-3">
+        <div class="flex items-start justify-between">
+          <div>
+            <p class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Time</p>
+            <p id="timer-display" class="text-3xl font-black text-slate-800 tabular-nums tracking-tight">00:00</p>
+          </div>
+          <div class="text-right">
+            <p class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Found</p>
+            <p class="text-3xl font-black text-slate-800">
+              <span id="found-count" class="text-emerald-700">0</span>
+              <span class="text-base text-slate-300 font-medium">/195</span>
+            </p>
+          </div>
+        </div>
+
+        <!-- Progress -->
+        <div class="space-y-1">
+          <div class="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+            <div id="progress-bar" class="h-full rounded-full" style="width:0%;background:linear-gradient(90deg,#4ade80,#006d36)"></div>
+          </div>
+          <p id="progress-pct" class="text-[10px] text-slate-400 font-medium text-right">0%</p>
+        </div>
+
+        <!-- Buttons -->
+        <div id="ctrl-start">
+          <button onclick="startGame()" class="action-btn btn-green w-full">
+            <span class="material-symbols-outlined" style="font-size:16px">play_arrow</span>
+            Start Game
+          </button>
+        </div>
+        <div id="ctrl-playing" class="hidden flex-col gap-2">
+          <button onclick="giveUp()" class="action-btn btn-green w-full">
+            <span class="material-symbols-outlined" style="font-size:16px">flag</span>
+            Give Up — Show Results
+          </button>
+          <button onclick="stopGame()" class="action-btn btn-red w-full">
+            <span class="material-symbols-outlined" style="font-size:16px">stop</span>
+            Stop
+          </button>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="glass-panel rounded-[22px] p-4 flex flex-col gap-2.5">
+        <p class="text-[9px] font-black uppercase tracking-widest text-slate-400">Statistics</p>
+        <div class="stat-row">
+          <span class="stat-label">Wrong guesses</span>
+          <span id="wrong-count" class="stat-val text-red-500">0</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Accuracy</span>
+          <span id="accuracy" class="stat-val text-emerald-700">—</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Countries / min</span>
+          <span id="rate" class="stat-val text-emerald-700">—</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Best streak</span>
+          <span id="streak" class="stat-val text-amber-600">0</span>
+        </div>
+      </div>
+
+      <!-- Found list -->
+      <div class="glass-panel rounded-[22px] p-4 flex flex-col gap-2 flex-1 overflow-hidden">
+        <div class="flex items-center justify-between">
+          <p class="text-[9px] font-black uppercase tracking-widest text-slate-400">Countries Found</p>
+          <span id="found-count-2" class="text-xs font-black text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">0</span>
+        </div>
+        <div id="found-list" class="flex flex-wrap gap-1 overflow-y-auto hide-scrollbar flex-1 content-start"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- END MODAL -->
+<div id="end-modal" class="fixed inset-0 z-50 items-center justify-center" style="background:rgba(15,20,30,0.6);backdrop-filter:blur(8px);">
+  <div class="modal-card bg-white rounded-[28px] shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+
+    <div id="modal-header" class="px-8 pt-8 pb-6 text-center">
+      <div id="modal-emoji" class="text-5xl mb-3">🌍</div>
+      <h2 class="text-3xl font-black text-white tracking-tight">Game Over</h2>
+      <p id="modal-subtitle" class="text-white/80 text-sm mt-1 font-medium"></p>
+      <div class="mt-4 bg-white/15 rounded-2xl px-6 py-3 inline-block">
+        <p class="text-white/60 text-[10px] font-black uppercase tracking-widest">Countries Found</p>
+        <p id="modal-found" class="text-4xl font-black text-white mt-0.5">0 / 195</p>
+      </div>
+    </div>
+
+    <div class="px-8 py-5">
+      <div class="bg-slate-50 rounded-2xl p-4 space-y-2.5 mb-4">
+        <div class="flex justify-between text-sm">
+          <span class="text-slate-400 font-medium">Time</span>
+          <span id="modal-time" class="font-black text-slate-700">—</span>
+        </div>
+        <div class="flex justify-between text-sm">
+          <span class="text-slate-400 font-medium">Wrong guesses</span>
+          <span id="modal-wrong" class="font-black text-red-500">—</span>
+        </div>
+        <div class="flex justify-between text-sm">
+          <span class="text-slate-400 font-medium">Accuracy</span>
+          <span id="modal-accuracy" class="font-black text-emerald-600">—</span>
+        </div>
+        <div class="flex justify-between text-sm">
+          <span class="text-slate-400 font-medium">Best streak</span>
+          <span id="modal-streak" class="font-black text-amber-600">—</span>
+        </div>
+        <hr class="border-slate-200"/>
+        <div class="flex justify-between items-center">
+          <span class="text-slate-500 font-bold text-sm">Score</span>
+          <span id="modal-score" class="text-2xl font-black text-emerald-700">—</span>
+        </div>
+      </div>
+
+      <!-- Missed countries -->
+      <div id="missed-section" class="hidden mb-4">
+        <p class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Missed Countries</p>
+        <div id="missed-list" class="flex flex-wrap gap-1 max-h-20 overflow-y-auto hide-scrollbar"></div>
+      </div>
+
+      <div class="flex gap-2">
+        <button onclick="restartGame()" class="action-btn btn-green flex-1">
+          <span class="material-symbols-outlined" style="font-size:15px">replay</span> Play Again
+        </button>
+        <button onclick="closeModal()" class="action-btn btn-slate flex-1">
+          <span class="material-symbols-outlined" style="font-size:15px">close</span> Close
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== COUNTRY DATA =====
+// Canonical name → 1 (primary entries only, no aliases)
+const PRIMARY_COUNTRIES = [
+  "Afghanistan","Albania","Algeria","Andorra","Angola","Antigua and Barbuda",
+  "Argentina","Armenia","Australia","Austria","Azerbaijan","Bahamas","Bahrain",
+  "Bangladesh","Barbados","Belarus","Belgium","Belize","Benin","Bhutan",
+  "Bolivia","Bosnia and Herzegovina","Botswana","Brazil","Brunei","Bulgaria",
+  "Burkina Faso","Burundi","Cabo Verde","Cambodia","Cameroon","Canada",
+  "Central African Republic","Chad","Chile","China","Colombia","Comoros",
+  "Congo","Costa Rica","Croatia","Cuba","Cyprus","Czech Republic","Denmark",
+  "Djibouti","Dominica","Dominican Republic","Ecuador","Egypt","El Salvador",
+  "Equatorial Guinea","Eritrea","Estonia","Eswatini","Ethiopia","Fiji",
+  "Finland","France","Gabon","Gambia","Georgia","Germany","Ghana","Greece",
+  "Grenada","Guatemala","Guinea","Guinea-Bissau","Guyana","Haiti","Honduras",
+  "Hungary","Iceland","India","Indonesia","Iran","Iraq","Ireland","Israel",
+  "Italy","Jamaica","Japan","Jordan","Kazakhstan","Kenya","Kiribati","Kuwait",
+  "Kyrgyzstan","Laos","Latvia","Lebanon","Lesotho","Liberia","Libya",
+  "Liechtenstein","Lithuania","Luxembourg","Madagascar","Malawi","Malaysia",
+  "Maldives","Mali","Malta","Marshall Islands","Mauritania","Mauritius",
+  "Mexico","Micronesia","Moldova","Monaco","Mongolia","Montenegro","Morocco",
+  "Mozambique","Myanmar","Namibia","Nauru","Nepal","Netherlands","New Zealand",
+  "Nicaragua","Niger","Nigeria","North Korea","North Macedonia","Norway","Oman",
+  "Pakistan","Palau","Panama","Papua New Guinea","Paraguay","Peru",
+  "Philippines","Poland","Portugal","Qatar","Romania","Russia","Rwanda",
+  "Saint Kitts and Nevis","Saint Lucia","Saint Vincent and the Grenadines",
+  "Samoa","San Marino","Sao Tome and Principe","Saudi Arabia","Senegal",
+  "Serbia","Seychelles","Sierra Leone","Singapore","Slovakia","Slovenia",
+  "Solomon Islands","Somalia","South Africa","South Korea","South Sudan",
+  "Spain","Sri Lanka","Sudan","Suriname","Sweden","Switzerland","Syria",
+  "Taiwan","Tajikistan","Tanzania","Thailand","Timor-Leste","Togo","Tonga",
+  "Trinidad and Tobago","Tunisia","Turkey","Turkmenistan","Tuvalu","Uganda",
+  "Ukraine","United Arab Emirates","United Kingdom","United States","Uruguay",
+  "Uzbekistan","Vanuatu","Vatican","Venezuela","Vietnam","Yemen","Zambia","Zimbabwe"
+];
+
+// All accepted inputs → canonical name
+const COUNTRY_MAP = {};
+PRIMARY_COUNTRIES.forEach(c => { COUNTRY_MAP[c.toLowerCase()] = c; });
+
+// Aliases
+const ALIASES_RAW = {
+  "usa": "United States", "u.s.a.": "United States", "us": "United States",
+  "america": "United States", "united states of america": "United States",
+  "uk": "United Kingdom", "u.k.": "United Kingdom", "britain": "United Kingdom",
+  "great britain": "United Kingdom", "england": "United Kingdom",
+  "uae": "United Arab Emirates", "emirates": "United Arab Emirates",
+  "czechia": "Czech Republic", "czech": "Czech Republic",
+  "burma": "Myanmar", "swaziland": "Eswatini",
+  "east timor": "Timor-Leste", "timor leste": "Timor-Leste",
+  "cape verde": "Cabo Verde", "ivory coast": "Cote d'Ivoire",
+  "south korea": "South Korea", "north korea": "North Korea",
+  "russia": "Russia", "russian federation": "Russia",
+  "iran": "Iran", "persia": "Iran",
+  "syria": "Syria", "bolivia": "Bolivia",
+  "venezuela": "Venezuela", "laos": "Laos",
+  "moldova": "Moldova", "congo": "Congo",
+  "dr congo": "Congo", "drc": "Congo",
+  "macedonia": "North Macedonia", "fyrom": "North Macedonia",
+  "turkey": "Turkey", "turkiye": "Turkey",
+  "trinidad": "Trinidad and Tobago",
+  "tobago": "Trinidad and Tobago", "st lucia": "Saint Lucia",
+  "st kitts": "Saint Kitts and Nevis", "st vincent": "Saint Vincent and the Grenadines",
+  "micronesia": "Micronesia", "marshall": "Marshall Islands",
+  "sao tome": "Sao Tome and Principe", "vietnam": "Vietnam", "viet nam": "Vietnam",
+  "gambia": "Gambia", "the gambia": "Gambia", "bahamas": "Bahamas", "the bahamas": "Bahamas",
+  "taiwan": "Taiwan", "republic of china": "Taiwan",
+  "vatican city": "Vatican", "holy see": "Vatican",
+};
+Object.entries(ALIASES_RAW).forEach(([alias, canonical]) => {
+  COUNTRY_MAP[alias.toLowerCase()] = canonical;
+});
+
+// SVG name map (GeoJSON → our canonical)
+const GEO_TO_CANONICAL = {
+  "United States of America": "United States",
+  "Republic of Korea": "South Korea",
+  "Dem. Rep. Korea": "North Korea",
+  "United Republic of Tanzania": "Tanzania",
+  "Syrian Arab Republic": "Syria",
+  "Iran (Islamic Republic of)": "Iran",
+  "Bolivia (Plurinational State of)": "Bolivia",
+  "Venezuela (Bolivarian Republic of)": "Venezuela",
+  "Republic of the Congo": "Congo",
+  "Dem. Rep. Congo": "Congo",
+  "Lao PDR": "Laos", "Lao People's Democratic Republic": "Laos",
+  "Republic of Moldova": "Moldova",
+  "Vatican City": "Vatican",
+  "State of Palestine": "Palestine",
+  "Taiwan": "Taiwan",
+  "Czechia": "Czech Republic",
+  "Czech Republic": "Czech Republic",
+  "North Macedonia": "North Macedonia",
+  "Eswatini": "Eswatini",
+  "Cabo Verde": "Cabo Verde",
+  "Timor-Leste": "Timor-Leste",
+  "Micronesia (Federated States of)": "Micronesia",
+  "Sao Tome and Principe": "Sao Tome and Principe",
+  "Saint Kitts and Nevis": "Saint Kitts and Nevis",
+  "Saint Lucia": "Saint Lucia",
+  "Saint Vincent and the Grenadines": "Saint Vincent and the Grenadines",
+  "Trinidad and Tobago": "Trinidad and Tobago",
+  "Papua New Guinea": "Papua New Guinea",
+  "Solomon Islands": "Solomon Islands",
+  "Marshall Islands": "Marshall Islands",
+  "Burkina Faso": "Burkina Faso",
+  "Guinea-Bissau": "Guinea-Bissau",
+  "Bosnia and Herzegovina": "Bosnia and Herzegovina",
+  "Antigua and Barbuda": "Antigua and Barbuda",
+  "Equatorial Guinea": "Equatorial Guinea",
+  "Central African Republic": "Central African Republic",
+  "South Sudan": "South Sudan",
+  "Dominican Republic": "Dominican Republic",
+  "El Salvador": "El Salvador",
+  "Costa Rica": "Costa Rica",
+  "New Zealand": "New Zealand",
+  "South Africa": "South Africa",
+  "Saudi Arabia": "Saudi Arabia",
+  "Sri Lanka": "Sri Lanka",
+  "North Korea": "North Korea",
+  "United Arab Emirates": "United Arab Emirates",
+  "United Kingdom": "United Kingdom",
+  "Brunei Darussalam": "Brunei",
+};
+
+// Build reverse: canonical → list of GeoJSON names
+const CANONICAL_TO_GEO = {};
+PRIMARY_COUNTRIES.forEach(c => { CANONICAL_TO_GEO[c] = [c]; });
+Object.entries(GEO_TO_CANONICAL).forEach(([geo, canonical]) => {
+  if (!CANONICAL_TO_GEO[canonical]) CANONICAL_TO_GEO[canonical] = [];
+  CANONICAL_TO_GEO[canonical].push(geo);
+});
+
+// ===== STATE =====
+let foundSet = new Set();
+let wrongGuesses = 0;
+let totalGuesses = 0;
+let currentStreak = 0;
+let bestStreak = 0;
+let timerInterval = null;
+let seconds = 0;
+let gameRunning = false;
+let mapLoaded = false;
+
+// SVG path lookup: geoName → path element
+let pathByGeoName = {};
+
+// ===== MAP =====
+async function loadMap() {
+  document.getElementById('map-placeholder').style.display = 'none';
+  document.getElementById('map-loading').style.display = 'flex';
+
+  try {
+    const res = await fetch('https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson');
+    if (!res.ok) throw new Error('fetch failed');
+    const geo = await res.json();
+    renderMap(geo);
+  } catch(e) {
+    // Fallback source
+    try {
+      const res2 = await fetch('https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson');
+      const geo = await res2.json();
+      renderMap(geo);
+    } catch(e2) {
+      document.getElementById('map-loading').style.display = 'none';
+      document.getElementById('map-container').innerHTML =
+        '<div class="flex items-center justify-center h-full flex-col gap-2 text-red-400"><span class="material-symbols-outlined text-4xl">error</span><span class="text-sm font-semibold">Failed to load map</span></div>';
+      document.getElementById('map-container').style.opacity = '1';
+    }
+  }
+}
+
+function renderMap(geo) {
+  const container = document.getElementById('map-container');
+  const W = 960; const H = 500;
+
+  function project(lon, lat) {
+    // Miller cylindrical — better visual than equirectangular
+    const x = (lon + 180) * (W / 360);
+    const latRad = lat * Math.PI / 180;
+    const millerY = 1.25 * Math.log(Math.tan(Math.PI/4 + 0.4 * latRad));
+    const maxY = 1.25 * Math.log(Math.tan(Math.PI/4 + 0.4 * (80 * Math.PI/180)));
+    const y = H/2 - (H/2) * (millerY / maxY);
+    return [x, y];
+  }
+
+  function ringToD(ring) {
+    return ring.map((pt, i) => {
+      const [x, y] = project(pt[0], pt[1]);
+      return (i === 0 ? 'M' : 'L') + x.toFixed(2) + ',' + y.toFixed(2);
+    }).join('') + 'Z';
+  }
+
+  function featureToD(f) {
+    const type = f.geometry.type;
+    if (type === 'Polygon') {
+      return f.geometry.coordinates.map(ringToD).join('');
+    } else if (type === 'MultiPolygon') {
+      return f.geometry.coordinates.map(poly => poly.map(ringToD).join('')).join('');
+    }
+    return '';
+  }
+
+  pathByGeoName = {};
+  let svgPaths = '';
+
+  geo.features.forEach(f => {
+    const props = f.properties;
+    // Try multiple name fields from different GeoJSON sources
+    const geoName = props.NAME || props.name || props.ADMIN || props.NAME_LONG || '';
+    if (!geoName || !f.geometry) return;
+
+    const d = featureToD(f);
+    if (!d) return;
+
+    const safeId = 'c_' + geoName.replace(/[^a-zA-Z0-9]/g, '_');
+    svgPaths += `<path id="${safeId}" data-name="${geoName}" d="${d}"><title>${geoName}</title></path>`;
+  });
+
+  container.innerHTML = `
+    <svg id="world-map-svg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+      <rect width="${W}" height="${H}" fill="#dbeafe" rx="0"/>
+      ${svgPaths}
+    </svg>`;
+
+  // Build lookup
+  container.querySelectorAll('path[data-name]').forEach(p => {
+    const name = p.getAttribute('data-name');
+    pathByGeoName[name] = p;
+  });
+
+  document.getElementById('map-loading').style.display = 'none';
+  container.style.opacity = '1';
+  mapLoaded = true;
+}
+
+function highlightCountry(canonical) {
+  if (!mapLoaded) return;
+  const geoNames = CANONICAL_TO_GEO[canonical] || [canonical];
+
+  let highlighted = false;
+  geoNames.forEach(geoName => {
+    const el = pathByGeoName[geoName];
+    if (el) {
+      el.classList.remove('just-found');
+      void el.offsetWidth; // reflow
+      el.classList.add('found', 'just-found');
+      highlighted = true;
+    }
+  });
+
+  // Fuzzy fallback
+  if (!highlighted) {
+    const lower = canonical.toLowerCase();
+    Object.entries(pathByGeoName).forEach(([geoName, el]) => {
+      if (!el.classList.contains('found')) {
+        const g = geoName.toLowerCase();
+        if (g.includes(lower) || lower.includes(g.split(' ')[0])) {
+          el.classList.remove('just-found');
+          void el.offsetWidth;
+          el.classList.add('found', 'just-found');
+        }
+      }
+    });
+  }
+}
+
+// ===== GAME =====
+function startGame() {
+  foundSet.clear();
+  wrongGuesses = 0; totalGuesses = 0;
+  currentStreak = 0; bestStreak = 0;
+  seconds = 0; gameRunning = true;
+
+  // Reset map colors
+  if (mapLoaded) {
+    document.querySelectorAll('#world-map-svg path.found').forEach(p => {
+      p.classList.remove('found','just-found');
+    });
+  }
+
+  // Reset UI
+  ['found-count','found-count-2'].forEach(id => document.getElementById(id).textContent = '0');
+  document.getElementById('found-list').innerHTML = '';
+  document.getElementById('wrong-count').textContent = '0';
+  document.getElementById('accuracy').textContent = '—';
+  document.getElementById('rate').textContent = '—';
+  document.getElementById('streak').textContent = '0';
+  document.getElementById('progress-bar').style.width = '0%';
+  document.getElementById('progress-pct').textContent = '0%';
+  document.getElementById('timer-display').textContent = '00:00';
+  document.getElementById('input-feedback').textContent = '';
+
+  document.getElementById('ctrl-start').classList.add('hidden');
+  const cp = document.getElementById('ctrl-playing');
+  cp.classList.remove('hidden');
+  cp.style.display = 'flex';
+
+  const input = document.getElementById('country-input');
+  input.disabled = false;
+  input.value = '';
+  input.focus();
+
+  timerInterval = setInterval(() => { seconds++; updateTimer(); updateRate(); }, 1000);
+
+  if (!mapLoaded) loadMap();
+}
+
+function stopGame()  { endGame(false); }
+function giveUp()    { endGame(true); }
+
+function restartGame() {
+  closeModal();
+  startGame();
+}
+
+function endGame(showMissed) {
+  gameRunning = false;
+  clearInterval(timerInterval);
+
+  document.getElementById('ctrl-playing').style.display = 'none';
+  document.getElementById('ctrl-start').classList.remove('hidden');
+  document.getElementById('country-input').disabled = true;
+
+  const total = foundSet.size;
+  const acc   = totalGuesses > 0 ? Math.round((total / totalGuesses) * 100) : 0;
+  const score = Math.round(total * 10 + acc * 2 - wrongGuesses * 3 + bestStreak * 5);
+
+  // Ratings
+  const ratings = [
+    { min:190, text:'Legendary! You know the whole world!', bg:'linear-gradient(135deg,#78350f,#d97706)' },
+    { min:150, text:'Outstanding performance!',              bg:'linear-gradient(135deg,#006d36,#10b981)' },
+    { min:100, text:'Great effort! Keep learning.',          bg:'linear-gradient(135deg,#1e3a5f,#3b82f6)' },
+    { min:50,  text:'Good start. Practice makes perfect.',   bg:'linear-gradient(135deg,#4c1d95,#7c3aed)' },
+    { min:0,   text:'Keep trying! You\'ll improve.',         bg:'linear-gradient(135deg,#374151,#6b7280)' },
+  ];
+  const r = ratings.find(x => total >= x.min);
+
+  document.getElementById('modal-header').style.background = r.bg;
+  document.getElementById('modal-emoji').textContent  = r.emoji;
+  document.getElementById('modal-subtitle').textContent = r.text;
+  document.getElementById('modal-found').textContent  = `${total} / 195`;
+  document.getElementById('modal-time').textContent   = formatTime(seconds);
+  document.getElementById('modal-wrong').textContent  = wrongGuesses;
+  document.getElementById('modal-accuracy').textContent = acc + '%';
+  document.getElementById('modal-streak').textContent = bestStreak;
+  document.getElementById('modal-score').textContent  = score.toLocaleString();
+
+  if (showMissed) {
+    const missed = PRIMARY_COUNTRIES.filter(c => !foundSet.has(c));
+    if (missed.length) {
+      document.getElementById('missed-section').classList.remove('hidden');
+      document.getElementById('missed-list').innerHTML = missed.map(c =>
+        `<span class="text-[10px] bg-red-50 text-red-400 font-semibold px-2 py-0.5 rounded-full border border-red-100">${c}</span>`
+      ).join('');
+    }
+  } else {
+    document.getElementById('missed-section').classList.add('hidden');
+  }
+
+  openModal();
+}
+
+// ===== INPUT =====
+document.addEventListener('DOMContentLoaded', () => {
+  const input = document.getElementById('country-input');
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') checkInput(); });
+  input.addEventListener('input',   () => { document.getElementById('input-feedback').textContent = ''; });
+});
+
+function checkInput() {
+  if (!gameRunning) return;
+  const input = document.getElementById('country-input');
+  const raw = input.value.trim();
+  if (!raw) return;
+
+  const normalized = raw.toLowerCase();
+  const canonical  = COUNTRY_MAP[normalized];
+
+  input.value = '';
+
+  if (!canonical) {
+    // Not a country
+    wrongGuesses++;
+    currentStreak = 0;
+    showFeedback('Not found', 'text-red-500');
+    input.classList.add('shake');
+    setTimeout(() => input.classList.remove('shake'), 380);
+    updateStats();
+    return;
+  }
+
+  totalGuesses++;
+
+  if (foundSet.has(canonical)) {
+    showFeedback('Already found! ✓', 'text-amber-500');
+    return;
+  }
+
+  // Correct!
+  foundSet.add(canonical);
+  currentStreak++;
+  if (currentStreak > bestStreak) bestStreak = currentStreak;
+
+  highlightCountry(canonical);
+  addFoundTag(canonical);
+  updateStats();
+  showFeedback('✓ ' + canonical, 'text-emerald-600');
+
+  if (foundSet.size === PRIMARY_COUNTRIES.length) {
+    setTimeout(() => endGame(false), 600);
+  }
+}
+
+function addFoundTag(name) {
+  const list = document.getElementById('found-list');
+  const tag  = document.createElement('span');
+  tag.className = 'country-tag';
+  tag.textContent = name;
+  list.prepend(tag);
+}
+
+function showFeedback(msg, cls) {
+  const el = document.getElementById('input-feedback');
+  el.textContent = msg;
+  el.className = `text-xs font-bold whitespace-nowrap min-w-[90px] text-right ${cls}`;
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.textContent = ''; }, 1600);
+}
+
+function updateStats() {
+  const count = foundSet.size;
+  const pct   = (count / PRIMARY_COUNTRIES.length * 100).toFixed(1);
+
+  ['found-count','found-count-2'].forEach(id => document.getElementById(id).textContent = count);
+  document.getElementById('wrong-count').textContent = wrongGuesses;
+  document.getElementById('streak').textContent      = bestStreak;
+  document.getElementById('progress-bar').style.width = pct + '%';
+  document.getElementById('progress-pct').textContent = pct + '%';
+
+  if (totalGuesses > 0) {
+    const acc = Math.round((count / totalGuesses) * 100);
+    document.getElementById('accuracy').textContent = acc + '%';
+  }
+}
+
+function updateRate() {
+  const mins = seconds / 60;
+  if (mins > 0.1 && foundSet.size > 0) {
+    document.getElementById('rate').textContent = (foundSet.size / mins).toFixed(1);
+  }
+}
+
+function updateTimer() {
+  document.getElementById('timer-display').textContent = formatTime(seconds);
+}
+
+function formatTime(s) {
+  const m   = Math.floor(s / 60).toString().padStart(2, '0');
+  const sec = (s % 60).toString().padStart(2, '0');
+  return `${m}:${sec}`;
+}
+
+function openModal() {
+  const m    = document.getElementById('end-modal');
+  const card = m.querySelector('.modal-card');
+  m.classList.add('open');
+  card.style.animation = 'none';
+  card.offsetHeight;
+  card.style.animation = '';
+}
+
+function closeModal() {
+  document.getElementById('end-modal').classList.remove('open');
+}
+</script>
+</body>
+</html>

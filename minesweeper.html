@@ -104,6 +104,7 @@ tailwind.config = {
   #end-modal.show { display: flex; }
 </style>
 <script src="navbar.js" defer></script>
+<script src="header.js" defer></script>
 </head>
 <body class="bg-background text-on-surface h-screen overflow-hidden flex">
 
@@ -114,16 +115,7 @@ tailwind.config = {
 <main class="ml-64 flex-1 flex flex-col h-screen overflow-hidden">
 
   <!-- Header -->
-  <header dir="rtl" class="flex justify-between items-center w-full px-6 h-16 bg-slate-50 backdrop-blur-xl sticky top-0 z-30 shrink-0 border-b border-slate-100">
-      <div class="w-full max-w-7xl flex justify-between items-center px-12">
-          <div class="flex items-center gap-3 text-primary font-bold">
-              <span class="material-symbols-outlined">brightness_high</span>
-              <span class="text-lg">Minesweeper</span>
-          </div>
-          <div id="game-message" class="text-sm font-bold text-emerald-700"></div>
-          <div class="text-sm font-bold text-emerald-900">Atar Noder Neder - funded by AIPAC</div>
-      </div>
-  </header>
+  <site-header title="Minesweeper" span="brightness_high"></site-header>
 
   <!-- 3-column content -->
   <div class="flex-1 p-5 grid grid-cols-12 gap-5 overflow-hidden">
