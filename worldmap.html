@@ -157,8 +157,7 @@ tailwind.config = {
         </div>
         <input
           id="country-input"
-          style="font-serif"
-          type="text"
+          type="text font-serif"
           placeholder="Type a country name and press Enter..."
           autocomplete="off"
           spellcheck="false"
@@ -241,9 +240,12 @@ tailwind.config = {
             <span class="material-symbols-outlined" style="font-size:16px">flag</span>
             Give Up — Show Results
           </button>
-          <button onclick="stopGame()" class="action-btn btn-red w-full">
+          <button id="stop-btn" onclick="pauseGame()" class="action-btn btn-red w-full">
             <span class="material-symbols-outlined" style="font-size:16px">stop</span>
             Stop
+          </button>
+          <button id="resume-btn" onclick="resumeGame()" class="hidden action-btn btn-slate w-full">
+            <span class="material-symbols-outlined" style="font-size:16px">play_arrow</span> Resume
           </button>
         </div>
       </div>
@@ -554,7 +556,7 @@ function renderMap(geo) {
     if (!d) return;
 
     const safeId = 'c_' + geoName.replace(/[^a-zA-Z0-9]/g, '_');
-    svgPaths += `<path id="${safeId}" data-name="${geoName}" d="${d}"><title>${geoName}</title></path>`;
+    svgPaths += `<path id="${safeId}" data-name="${geoName}" d="${d}"></path>`;
   });
 
   container.innerHTML = `
@@ -577,6 +579,10 @@ function renderMap(geo) {
 function highlightCountry(canonical) {
   if (!mapLoaded) return;
   const geoNames = CANONICAL_TO_GEO[canonical] || [canonical];
+
+  if (canonical === "Israel") {
+    geoNames.push("Palestine"); // וודא שהשם כאן תואם בדיוק למה שמופיע ב-GeoJSON שלך
+  }
 
   let highlighted = false;
   geoNames.forEach(geoName => {
@@ -646,12 +652,47 @@ function startGame() {
   if (!mapLoaded) loadMap();
 }
 
-function stopGame()  { endGame(false); }
+function pauseGame() {
+  gameRunning = false;
+  clearInterval(timerInterval); // עוצר את הטיימר
+
+  // החלפת כפתורים
+  document.getElementById('stop-btn').classList.add('hidden');
+  document.getElementById('resume-btn').classList.remove('hidden');
+  
+  // השבתת האינפוט כדי שלא ינחשו בזמן עצירה
+  document.getElementById('country-input').disabled = true;
+}
+
+function resumeGame() {
+  gameRunning = true;
+  
+  // חידוש הטיימר
+  timerInterval = setInterval(() => { seconds++; updateTimer(); updateRate(); }, 1000);
+
+  // החלפת כפתורים בחזרה
+  document.getElementById('stop-btn').classList.remove('hidden');
+  document.getElementById('resume-btn').classList.add('hidden');
+  
+  // החזרת האינפוט
+  const input = document.getElementById('country-input');
+  input.disabled = false;
+  input.focus();
+}
+
+// ושמור על הפונקציה המקורית אם אתה רוצה "עצירה מלאה" שמאפסת הכל
+function stopGameCompletely() {
+  gameRunning = false;
+  clearInterval(timerInterval);
+  location.reload(); // רענון מלא למצב התחלתי
+}
+
+
 function giveUp()    { endGame(true); }
 
 function restartGame() {
   closeModal();
-  startGame();
+  location.reload();
 }
 
 function endGame(showMissed) {
