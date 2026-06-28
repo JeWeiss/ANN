@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html class="light" lang="en">
 <head>
@@ -6,7 +5,9 @@
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Atar Noder Neder | Wordle</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Inter:wght@400;600;800&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 <script id="tailwind-config">
 tailwind.config = {
@@ -19,60 +20,83 @@ tailwind.config = {
                 "secondary": "#516169", "on-secondary": "#ffffff",
                 "secondary-container": "#d2e2ec", "on-secondary-container": "#55656d",
                 "tertiary": "#99443a", "tertiary-container": "#ff9587", "on-tertiary-container": "#782b23",
-                "surface": "#f7f9fb", "surface-container": "#eceef0",
-                "surface-container-low": "#f2f4f6", "surface-container-lowest": "#ffffff",
-                "surface-container-high": "#e6e8ea", "surface-container-highest": "#e0e3e5",
-                "on-surface": "#191c1e", "on-surface-variant": "#3e4a3f",
-                "outline": "#6e7a6e", "outline-variant": "#bdcabc",
-                "background": "#f7f9fb", "on-background": "#191c1e",
+                "surface": "#FBF8F2", "surface-container": "#F3ECDC",
+                "surface-container-low": "#F8F4E9", "surface-container-lowest": "#ffffff",
+                "surface-container-high": "#ece4d2", "surface-container-highest": "#e0d8c4",
+                "on-surface": "#241B2F", "on-surface-variant": "#5c5468",
+                "outline": "#bdb39a", "outline-variant": "#ddd4ba",
+                "background": "#FBF8F2", "on-background": "#241B2F",
             },
-            fontFamily: { "headline": ["Plus Jakarta Sans"], "body": ["Plus Jakarta Sans"] },
-            borderRadius: { "DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px" },
+            fontFamily: { "headline": ["Fraunces"], "body": ["Plus Jakarta Sans"] },
+            borderRadius: { "DEFAULT": "8px", "lg": "10px", "xl": "10px", "full": "9999px" },
         },
     },
 }
 </script>
 <style>
+    :root{ --paper:#FBF8F2; --ink:#241B2F; --maroon:#8E0045; --forest:#006d36; --terracotta:#D66F4B; --brass:#C9952C; --cream:#F3ECDC; }
     body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .font-display{ font-family:'Fraunces', serif; }
+    .font-eyebrow{ font-family:'Inter', sans-serif; letter-spacing:0.13em; }
     .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
-    .tile-green  { background-color: #006d36 !important; color: white !important; border-color: #006d36 !important; }
-    .tile-yellow { background-color: #ff9587 !important; color: white !important; border-color: #ff9587 !important; }
-    .tile-gray   { background-color: #516169 !important; color: white !important; border-color: #516169 !important; }
-    .key-green   { background-color: #006d36 !important; color: white !important; }
-    .key-yellow  { background-color: #ff9587 !important; color: white !important; }
-    .key-gray    { background-color: #516169 !important; color: white !important; }
     .hide-scrollbar::-webkit-scrollbar { display: none; }
     .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    .glass-panel { background: rgba(255,255,255,0.6); backdrop-filter: blur(12px); border: 1px solid rgba(226,232,240,0.8); }
-    .bar-fill { transition: width 0.6s ease; }
-    @keyframes shake {
-        0%,100% { transform: translateX(0); }
-        20% { transform: translateX(-6px); }
-        40% { transform: translateX(6px); }
-        60% { transform: translateX(-4px); }
-        80% { transform: translateX(4px); }
+
+    body.bg-background{
+      background-image: radial-gradient(rgba(36,27,47,0.06) 1px, transparent 1px);
+      background-size: 18px 18px;
     }
+
+    /* ---- shared lobby card: notched, 10px radius, hard shadow ---- */
+    .notch-panel{
+      position:relative; background:#fff; border:1px solid rgba(36,27,47,0.08);
+      border-radius:10px; box-shadow:3px 3px 0 rgba(36,27,47,0.07);
+    }
+    .glass-panel{ /* alias kept so original class name still works */
+      background:#fff; border:1px solid rgba(36,27,47,0.08); border-radius:10px;
+      box-shadow:3px 3px 0 rgba(36,27,47,0.07);
+    }
+
+    /* tile colors — recolored from generic green/orange/gray to palette */
+    .tile-green  { background-color: var(--forest) !important; color:#fff !important; border-color: var(--forest) !important; }
+    .tile-yellow { background-color: var(--terracotta) !important; color:#fff !important; border-color: var(--terracotta) !important; }
+    .tile-gray   { background-color: #6b5d4a !important; color:#fff !important; border-color: #6b5d4a !important; }
+    .key-green   { background-color: var(--forest) !important; color:#fff !important; }
+    .key-yellow  { background-color: var(--terracotta) !important; color:#fff !important; }
+    .key-gray    { background-color: #6b5d4a !important; color:#fff !important; }
+
+    @keyframes shake { 0%,100%{transform:translateX(0);} 20%{transform:translateX(-6px);} 40%{transform:translateX(6px);} 60%{transform:translateX(-4px);} 80%{transform:translateX(4px);} }
     .shake { animation: shake 0.35s ease; }
-    @keyframes pop {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.12); }
-        100% { transform: scale(1); }
-    }
+    @keyframes pop { 0%{transform:scale(1);} 50%{transform:scale(1.12);} 100%{transform:scale(1);} }
     .pop { animation: pop 0.1s ease; }
-    @keyframes flipIn {
-        0%   { transform: rotateX(0deg); }
-        50%  { transform: rotateX(-90deg); }
-        100% { transform: rotateX(0deg); }
+    .bar-fill { transition: width 0.6s ease; }
+
+    /* puzzle-book framing around the board */
+    .puzzle-frame{
+      position:relative; background:var(--cream);
+      border:2px solid var(--ink); border-radius:10px;
+      box-shadow:4px 4px 0 rgba(36,27,47,0.12);
+      padding:18px 22px;
     }
-    .tile-reveal { animation: flipIn 0.5s ease forwards; }
+    .puzzle-frame::before{
+      content:'No. 247 — DAILY WORD';
+      position:absolute; top:-11px; left:18px; background:var(--cream);
+      padding:0 8px; font-family:'Inter',sans-serif; font-size:9px; font-weight:800;
+      letter-spacing:0.14em; color:var(--maroon); text-transform:uppercase;
+    }
+
+    /* message ribbon — doubles as the finish "logbook stamp" via two extra classes */
     #message-box {
-        min-height: 28px;
-        font-size: 13px;
-        font-weight: 700;
-        text-align: center;
-        color: #006d36;
+        min-height: 30px; font-family:'Inter',sans-serif;
+        font-size: 11px; font-weight: 800; letter-spacing:0.08em; text-transform:uppercase;
+        text-align: center; color: var(--maroon);
         transition: opacity 0.3s;
     }
+    #message-box.msg-win{ color: var(--forest); }
+    #message-box.msg-lose{ color: #a3504a; }
+
+    .ledger-row{ display:flex; align-items:baseline; gap:6px; font-size:12px; }
+    .ledger-fill{ flex:1; border-bottom:1px dotted rgba(36,27,47,0.3); margin-bottom:3px; }
 </style>
 <script src="navbar.js" defer></script>
 <script src="header.js" defer></script>
@@ -88,8 +112,8 @@ tailwind.config = {
     <div class="flex-1 overflow-hidden grid grid-cols-12 gap-4 p-4">
 
         <!-- LEFT: How to Play -->
-        <aside class="col-span-3 glass-panel rounded-[28px] p-6 flex flex-col gap-4 overflow-y-auto hide-scrollbar">
-            <div class="flex items-center gap-2 text-emerald-800 font-black tracking-tighter uppercase text-xs">
+        <aside class="col-span-3 glass-panel p-6 flex flex-col gap-4 overflow-y-auto hide-scrollbar">
+            <div class="flex items-center gap-2 text-[var(--maroon)] font-black tracking-tighter uppercase text-xs font-eyebrow">
                 <span class="material-symbols-outlined text-sm">help_outline</span>
                 <span>How to Play</span>
             </div>
@@ -116,68 +140,68 @@ tailwind.config = {
                     </div>
                 </div>
             </div>
-            <hr class="border-slate-200"/>
+            <hr class="border-[var(--ink)]/10"/>
             <div>
-                <p class="text-[10px] font-black uppercase tracking-widest text-emerald-800 mb-3">Tile Colors</p>
+                <p class="text-[10px] font-black uppercase tracking-widest text-[var(--maroon)] mb-3 font-eyebrow">Tile Colors</p>
                 <div class="flex flex-col gap-2.5">
                     <div class="flex items-center gap-3">
-                        <div class="w-9 h-9 rounded-xl bg-[#006d36] flex items-center justify-center text-white text-sm font-black shadow-sm shrink-0">A</div>
+                        <div class="w-9 h-9 rounded-[8px] bg-[var(--forest)] flex items-center justify-center text-white text-sm font-black shadow-sm shrink-0 font-display">A</div>
                         <div>
                             <p class="text-xs font-bold text-on-surface">Green — correct spot</p>
                             <p class="text-[11px] text-on-surface-variant">Right letter, right position</p>
                         </div>
                     </div>
                     <div class="flex items-center gap-3">
-                        <div class="w-9 h-9 rounded-xl bg-[#ff9587] flex items-center justify-center text-white text-sm font-black shadow-sm shrink-0">B</div>
+                        <div class="w-9 h-9 rounded-[8px] bg-[var(--terracotta)] flex items-center justify-center text-white text-sm font-black shadow-sm shrink-0 font-display">B</div>
                         <div>
-                            <p class="text-xs font-bold text-on-surface">Orange — wrong spot</p>
+                            <p class="text-xs font-bold text-on-surface">Terracotta — wrong spot</p>
                             <p class="text-[11px] text-on-surface-variant">In the word, but misplaced</p>
                         </div>
                     </div>
                     <div class="flex items-center gap-3">
-                        <div class="w-9 h-9 rounded-xl bg-[#516169] flex items-center justify-center text-white text-sm font-black shadow-sm shrink-0">C</div>
+                        <div class="w-9 h-9 rounded-[8px] bg-[#6b5d4a] flex items-center justify-center text-white text-sm font-black shadow-sm shrink-0 font-display">C</div>
                         <div>
-                            <p class="text-xs font-bold text-on-surface">Gray — not in word</p>
+                            <p class="text-xs font-bold text-on-surface">Ink — not in word</p>
                             <p class="text-[11px] text-on-surface-variant">This letter is not in the word</p>
                         </div>
                     </div>
                 </div>
             </div>
-            <hr class="border-slate-200"/>
+            <hr class="border-[var(--ink)]/10"/>
             <div>
-                <p class="text-[10px] font-black uppercase tracking-widest text-emerald-800 mb-2">Example</p>
+                <p class="text-[10px] font-black uppercase tracking-widest text-[var(--maroon)] mb-2 font-eyebrow">Example</p>
                 <p class="text-[11px] text-on-surface-variant mb-2">Guessing <span class="font-bold text-on-surface">CRANE</span> for <span class="font-bold text-on-surface">CHARM</span>:</p>
                 <div class="flex gap-1.5 mb-2">
-                    <div class="w-8 h-8 rounded-lg bg-[#006d36] flex items-center justify-center text-white text-xs font-black">C</div>
-                    <div class="w-8 h-8 rounded-lg bg-[#ff9587] flex items-center justify-center text-white text-xs font-black">R</div>
-                    <div class="w-8 h-8 rounded-lg bg-[#ff9587] flex items-center justify-center text-white text-xs font-black">A</div>
-                    <div class="w-8 h-8 rounded-lg bg-[#516169] flex items-center justify-center text-white text-xs font-black">N</div>
-                    <div class="w-8 h-8 rounded-lg bg-[#516169] flex items-center justify-center text-white text-xs font-black">E</div>
+                    <div class="w-8 h-8 rounded-[6px] bg-[var(--forest)] flex items-center justify-center text-white text-xs font-black font-display">C</div>
+                    <div class="w-8 h-8 rounded-[6px] bg-[var(--terracotta)] flex items-center justify-center text-white text-xs font-black font-display">R</div>
+                    <div class="w-8 h-8 rounded-[6px] bg-[var(--terracotta)] flex items-center justify-center text-white text-xs font-black font-display">A</div>
+                    <div class="w-8 h-8 rounded-[6px] bg-[#6b5d4a] flex items-center justify-center text-white text-xs font-black font-display">N</div>
+                    <div class="w-8 h-8 rounded-[6px] bg-[#6b5d4a] flex items-center justify-center text-white text-xs font-black font-display">E</div>
                 </div>
                 <p class="text-[11px] text-on-surface-variant leading-relaxed">
-                    <span class="font-bold text-[#006d36]">C</span> is correct.
-                    <span class="font-bold text-[#ff9587]"> R, A</span> are in the word but misplaced.
-                    <span class="font-bold text-[#516169]"> N, E</span> are not in the word.
+                    <span class="font-bold text-[var(--forest)]">C</span> is correct.
+                    <span class="font-bold text-[var(--terracotta)]"> R, A</span> are in the word but misplaced.
+                    <span class="font-bold text-[#6b5d4a]"> N, E</span> are not in the word.
                 </p>
             </div>
-            <hr class="border-slate-200"/>
+            <hr class="border-[var(--ink)]/10"/>
             <div>
-                <p class="text-[10px] font-black uppercase tracking-widest text-emerald-800 mb-2">Pro Tips</p>
+                <p class="text-[10px] font-black uppercase tracking-widest text-[var(--maroon)] mb-2 font-eyebrow">Pro Tips</p>
                 <ul class="flex flex-col gap-2">
                     <li class="flex items-start gap-2 text-[11px] text-on-surface-variant leading-relaxed">
-                        <span class="text-emerald-500 font-black shrink-0 mt-0.5">→</span>
+                        <span class="text-[var(--forest)] font-black shrink-0 mt-0.5">→</span>
                         Start with <span class="font-bold text-on-surface mx-0.5">CRANE</span> or <span class="font-bold text-on-surface mx-0.5">SLATE</span> — they cover the most common letters.
                     </li>
                     <li class="flex items-start gap-2 text-[11px] text-on-surface-variant leading-relaxed">
-                        <span class="text-emerald-500 font-black shrink-0 mt-0.5">→</span>
-                        Never reuse gray letters — they're confirmed absent.
+                        <span class="text-[var(--forest)] font-black shrink-0 mt-0.5">→</span>
+                        Never reuse ink letters — they're confirmed absent.
                     </li>
                     <li class="flex items-start gap-2 text-[11px] text-on-surface-variant leading-relaxed">
-                        <span class="text-emerald-500 font-black shrink-0 mt-0.5">→</span>
-                        Orange letters must move to a <span class="font-bold text-on-surface mx-0.5">different</span> position next guess.
+                        <span class="text-[var(--forest)] font-black shrink-0 mt-0.5">→</span>
+                        Terracotta letters must move to a <span class="font-bold text-on-surface mx-0.5">different</span> position next guess.
                     </li>
                     <li class="flex items-start gap-2 text-[11px] text-on-surface-variant leading-relaxed">
-                        <span class="text-emerald-500 font-black shrink-0 mt-0.5">→</span>
+                        <span class="text-[var(--forest)] font-black shrink-0 mt-0.5">→</span>
                         Words can have repeated letters, e.g. <span class="font-bold text-on-surface mx-0.5">SPELL</span> or <span class="font-bold text-on-surface mx-0.5">ADDED</span>.
                     </li>
                 </ul>
@@ -185,76 +209,65 @@ tailwind.config = {
         </aside>
 
         <!-- CENTER: Board & Keyboard -->
-        <div class="col-span-6 flex flex-col items-center justify-center gap-3">
-            <!-- message box — זה היה חסר! -->
+        <div class="col-span-6 flex flex-col items-center gap-6 py-6">
             <div id="message-box"></div>
 
-            <div id="board" class="grid grid-rows-6 gap-2"></div>
+            <div class="puzzle-frame flex flex-col items-center gap-4">
+              <div id="board" class="grid grid-rows-6 gap-2"></div>
 
-            <div class="w-full max-w-lg space-y-2" id="keyboard">
-                <div class="flex justify-center gap-1.5" id="kb-row-0"></div>
-                <div class="flex justify-center gap-1.5 px-4" id="kb-row-1"></div>
-                <div class="flex justify-center gap-1.5" id="kb-row-2"></div>
+              <div class="w-full max-w-lg space-y-2" id="keyboard">
+                  <div class="flex justify-center gap-1.5" id="kb-row-0"></div>
+                  <div class="flex justify-center gap-1.5 px-4" id="kb-row-1"></div>
+                  <div class="flex justify-center gap-1.5" id="kb-row-2"></div>
+              </div>
             </div>
 
-            <button onclick="restart()" class="px-6 py-2 bg-primary text-on-primary rounded-full font-bold text-sm hover:opacity-90 transition-opacity">
+            <button onclick="restart()" class="px-6 py-2 bg-primary text-on-primary rounded-[8px] font-bold text-sm hover:opacity-90 transition-opacity shadow-[2px_2px_0_#00431F]">
                 Restart Game
             </button>
         </div>
 
-        <!-- RIGHT: Stats -->
+        <!-- RIGHT: Stats — styled as a scorebook page -->
         <aside class="col-span-3 flex flex-col gap-4 overflow-y-auto hide-scrollbar">
-            <div class="glass-panel rounded-[28px] p-6 flex flex-col gap-4">
-                <div class="flex items-center gap-2 text-emerald-800 font-black tracking-tighter uppercase text-xs">
+            <div class="glass-panel p-6 flex flex-col gap-4">
+                <div class="flex items-center gap-2 text-[var(--maroon)] font-black tracking-tighter uppercase text-xs font-eyebrow">
                     <span class="material-symbols-outlined text-sm">bar_chart</span>
                     <span>Game Stats</span>
                 </div>
                 <div class="grid grid-cols-2 gap-2">
-                    <div class="bg-emerald-50 rounded-2xl p-3 text-center">
-                        <p id="stat-played" class="text-2xl font-black text-emerald-800">0</p>
+                    <div class="bg-[var(--cream)] rounded-[8px] p-3 text-center">
+                        <p id="stat-played" class="text-2xl font-black text-[var(--maroon)] font-display">0</p>
                         <p class="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Played</p>
                     </div>
-                    <div class="bg-emerald-50 rounded-2xl p-3 text-center">
-                        <p id="stat-wins" class="text-2xl font-black text-emerald-800">0</p>
+                    <div class="bg-[var(--cream)] rounded-[8px] p-3 text-center">
+                        <p id="stat-wins" class="text-2xl font-black text-[var(--maroon)] font-display">0</p>
                         <p class="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Wins</p>
                     </div>
-                    <div class="bg-emerald-50 rounded-2xl p-3 text-center">
-                        <p id="stat-winpct" class="text-2xl font-black text-emerald-800">—</p>
+                    <div class="bg-[var(--cream)] rounded-[8px] p-3 text-center">
+                        <p id="stat-winpct" class="text-2xl font-black text-[var(--maroon)] font-display">—</p>
                         <p class="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Win %</p>
                     </div>
-                    <div class="bg-emerald-50 rounded-2xl p-3 text-center">
-                        <p id="stat-streak" class="text-2xl font-black text-emerald-800">0</p>
+                    <div class="bg-[var(--cream)] rounded-[8px] p-3 text-center">
+                        <p id="stat-streak" class="text-2xl font-black text-[var(--maroon)] font-display">0</p>
                         <p class="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Streak</p>
                     </div>
                 </div>
-                <hr class="border-slate-200"/>
+                <hr class="border-[var(--ink)]/10"/>
                 <div>
-                    <p class="text-[10px] font-black uppercase tracking-widest text-emerald-800 mb-2">Guess Distribution</p>
+                    <p class="text-[10px] font-black uppercase tracking-widest text-[var(--maroon)] mb-2 font-eyebrow">Guess Distribution</p>
                     <div class="flex flex-col gap-1.5" id="guess-dist"></div>
                 </div>
-                <hr class="border-slate-200"/>
+                <hr class="border-[var(--ink)]/10"/>
                 <div>
-                    <p class="text-[10px] font-black uppercase tracking-widest text-emerald-800 mb-3">Current Game</p>
+                    <p class="text-[10px] font-black uppercase tracking-widest text-[var(--maroon)] mb-3 font-eyebrow">Current Game</p>
                     <div class="flex flex-col gap-2">
-                        <div class="flex justify-between items-center">
-                            <span class="text-xs font-bold text-on-surface-variant">Guesses used</span>
-                            <span id="curr-guesses" class="text-xs font-black text-emerald-800">0 / 6</span>
+                        <div class="ledger-row"><span class="text-on-surface-variant font-bold">Guesses used</span><span class="ledger-fill"></span><span id="curr-guesses" class="font-black text-[var(--maroon)]">0 / 6</span></div>
+                        <div class="w-full h-2 bg-[var(--cream)] rounded-full overflow-hidden mt-1">
+                            <div id="curr-guesses-bar" class="h-full bg-[var(--forest)] rounded-full bar-fill" style="width:0%"></div>
                         </div>
-                        <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                            <div id="curr-guesses-bar" class="h-full bg-emerald-500 rounded-full bar-fill" style="width:0%"></div>
-                        </div>
-                        <div class="flex justify-between items-center mt-1">
-                            <span class="text-xs font-bold text-on-surface-variant">🟩 Green tiles</span>
-                            <span id="curr-green" class="text-xs font-black text-[#006d36]">0</span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-xs font-bold text-on-surface-variant">🟧 Orange tiles</span>
-                            <span id="curr-yellow" class="text-xs font-black text-[#ff9587]">0</span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-xs font-bold text-on-surface-variant">⬛ Eliminated</span>
-                            <span id="curr-gray" class="text-xs font-black text-[#516169]">0</span>
-                        </div>
+                        <div class="ledger-row mt-1"><span class="text-on-surface-variant font-bold">🟩 Green tiles</span><span class="ledger-fill"></span><span id="curr-green" class="font-black text-[var(--forest)]">0</span></div>
+                        <div class="ledger-row"><span class="text-on-surface-variant font-bold">🟧 Terracotta tiles</span><span class="ledger-fill"></span><span id="curr-yellow" class="font-black text-[var(--terracotta)]">0</span></div>
+                        <div class="ledger-row"><span class="text-on-surface-variant font-bold">⬛ Eliminated</span><span class="ledger-fill"></span><span id="curr-gray" class="font-black text-[#6b5d4a]">0</span></div>
                     </div>
                 </div>
             </div>
@@ -304,7 +317,10 @@ const keyColors = {};
 let gameOver = false;
 let isRevealing = false; // מונע input בזמן אנימציה
 
-const TILE_BASE = "w-14 h-14 flex items-center justify-center text-2xl font-black rounded-2xl border-2 transition-all duration-100";
+// Cosmetic tweak: tile base classes recolored/re-radiused to match the
+// puzzle-book identity (rounded-2xl → rounded-[6px], border-slate-200 → ink-tinted).
+// Same logic as before, just different Tailwind utility names.
+const TILE_BASE = "w-14 h-14 flex items-center justify-center text-2xl font-black font-display rounded-[6px] border-2 transition-all duration-100";
 
 // בנה לוח
 const board = document.getElementById("board");
@@ -314,14 +330,14 @@ for (let i = 0; i < maxGuesses; i++) {
     row.id = "row-" + i;
     for (let j = 0; j < 5; j++) {
         const tile = document.createElement("div");
-        tile.className = `${TILE_BASE} bg-white border-slate-200 text-slate-800 shadow-sm`;
+        tile.className = `${TILE_BASE} bg-white border-[#ddd4ba] text-[#241B2F] shadow-sm`;
         tile.id = `tile-${i}-${j}`;
         row.appendChild(tile);
     }
     board.appendChild(row);
 }
 
-// בנה מקלדת
+// בנה מקלדת — cosmetic: bg-slate-200 → cream/ink, rounded-2xl → rounded-[8px]
 const KB_ROWS = [
     ["Q","W","E","R","T","Y","U","I","O","P"],
     ["A","S","D","F","G","H","J","K","L"],
@@ -333,7 +349,7 @@ KB_ROWS.forEach((row, ri) => {
         const btn = document.createElement("button");
         btn.id = "key-" + key;
         const isWide = key === "ENTER" || key === "⌫";
-        btn.className = `${isWide ? "flex-[1.5]" : "flex-1"} h-14 bg-slate-200 text-slate-700 rounded-2xl font-black hover:bg-slate-300 active:scale-95 transition-all uppercase text-[11px] shadow-sm`;
+        btn.className = `${isWide ? "flex-[1.5]" : "flex-1"} h-14 bg-[#F3ECDC] text-[#241B2F] rounded-[8px] font-black hover:bg-[#e9dfc4] active:scale-95 transition-all uppercase text-[11px] shadow-[1.5px_1.5px_0_rgba(36,27,47,0.18)] border border-[#ddd4ba]`;
         btn.innerHTML = key === "⌫"
             ? `<span class="material-symbols-outlined text-sm">backspace</span>`
             : key;
@@ -344,6 +360,8 @@ KB_ROWS.forEach((row, ri) => {
 
 // ── Input ──
 document.addEventListener("keydown", (e) => {
+    console.log("Key pressed:", e.key);
+    console.log("Active element:", document.activeElement);
     if (gameOver || isRevealing) return;
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     if (e.key === "Enter")     { submitGuess(); return; }
@@ -356,6 +374,7 @@ function handleKey(key) {
     if (key === "⌫")    { deleteLetter(); return; }
     if (key === "ENTER") { submitGuess();  return; }
     addLetter(key.toLowerCase());
+    document.activeElement.blur();
 }
 
 function addLetter(letter) {
@@ -365,13 +384,14 @@ function addLetter(letter) {
     tile.textContent = letter.toUpperCase();
     tile.className = `${TILE_BASE} bg-white border-primary text-primary shadow-lg scale-105 pop`;
     setTimeout(() => tile.classList.remove("pop"), 120);
+    document.activeElement.blur();
 }
 
 function deleteLetter() {
     if (!currentGuess.length) return;
     const tile = document.getElementById(`tile-${currentRow}-${currentGuess.length - 1}`);
     tile.textContent = "";
-    tile.className = `${TILE_BASE} bg-white border-slate-200 text-slate-800 shadow-sm`;
+    tile.className = `${TILE_BASE} bg-white border-[#ddd4ba] text-[#241B2F] shadow-sm`;
     currentGuess = currentGuess.slice(0, -1);
 }
 
@@ -457,12 +477,14 @@ function submitGuess() {
             gamesPlayed++; gamesWon++; currentStreak++;
             guessDist[currentRow - 1]++;
             updateStats();
-            setMessage("🎉 Brilliant! You got it!");
+            setMessage("Riddle solved — well guessed!");
+            document.getElementById('message-box').classList.add('msg-win');
             gameOver = true;
         } else if (currentRow >= maxGuesses) {
             gamesPlayed++; currentStreak = 0;
             updateStats();
-            setMessage(`The word was: ${currentWord.toUpperCase()}`);
+            setMessage(`Out of guesses. The word was: ${currentWord.toUpperCase()}`);
+            document.getElementById('message-box').classList.add('msg-lose');
             gameOver = true;
         } else {
             setMessage("");
@@ -497,9 +519,9 @@ function buildGuessDist() {
         const div = document.createElement("div");
         div.className = "flex items-center gap-2";
         div.innerHTML = `
-            <span class="text-[10px] font-black text-on-surface-variant w-3 shrink-0">${i+1}</span>
-            <div class="flex-1 h-5 bg-slate-100 rounded-full overflow-hidden">
-                <div class="h-full bg-emerald-500 rounded-full bar-fill flex items-center justify-end pr-1.5"
+            <span class="text-[10px] font-black text-on-surface-variant w-3 shrink-0 font-display">${i+1}</span>
+            <div class="flex-1 h-5 bg-[var(--cream)] rounded-full overflow-hidden">
+                <div class="h-full bg-[var(--forest)] rounded-full bar-fill flex items-center justify-end pr-1.5"
                      style="width:${count > 0 ? Math.max(pct,12) : 0}%">
                     ${count > 0 ? `<span class="text-[9px] font-black text-white">${count}</span>` : ''}
                 </div>
@@ -531,7 +553,7 @@ function restart() {
         for (let j = 0; j < 5; j++) {
             const tile = document.getElementById(`tile-${i}-${j}`);
             tile.textContent  = "";
-            tile.className    = `${TILE_BASE} bg-white border-slate-200 text-slate-800 shadow-sm`;
+            tile.className    = `${TILE_BASE} bg-white border-[#ddd4ba] text-[#241B2F] shadow-sm`;
             tile.style.transform  = "";
             tile.style.transition = "";
         }
@@ -544,9 +566,11 @@ function restart() {
     isRevealing = false;
     currGreen = 0; currYellow = 0; currGray = 0;
     currentWord = WORDS[Math.floor(Math.random() * WORDS.length)];
+    document.getElementById('message-box').classList.remove('msg-win','msg-lose');
     setMessage("");
     updateCurrentGame();
     clearTimeout(msgTimer);
+    document.activeElement.blur();
 }
 
 // ── Init ──
