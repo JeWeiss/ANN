@@ -5,7 +5,9 @@
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Atar Noder Neder | World Map</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,700;1,9..144,500;1,9..144,600&family=Inter:wght@400;600;800&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 <script>
 tailwind.config = {
@@ -13,9 +15,9 @@ tailwind.config = {
     extend: {
       colors: {
         "primary": "#006d36",
-        "surface": "#f7f9fb",
-        "on-surface": "#191c1e",
-        "background": "#f7f9fb",
+        "surface": "#FBF8F2",
+        "on-surface": "#241B2F",
+        "background": "#FBF8F2",
       },
       fontFamily: { "body": ["Plus Jakarta Sans"] },
     },
@@ -23,11 +25,21 @@ tailwind.config = {
 }
 </script>
 <style>
+  :root{ --paper: #FBF8F2; --ink: #241B2F; }
   body { font-family: 'Plus Jakarta Sans', sans-serif; }
+  .font-display{ font-family: 'Fraunces', serif; }
+  .font-eyebrow{ font-family: 'Inter', sans-serif; letter-spacing: 0.14em; }
   .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
   .hide-scrollbar::-webkit-scrollbar { display: none; }
   .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-  .glass-panel { background: rgba(255,255,255,0.75); backdrop-filter: blur(14px); border: 1px solid rgba(226,232,240,0.9); }
+
+  /* faint dot texture, same family as the lobby page */
+  body.bg-background{
+    background-image: radial-gradient(rgba(36,27,47,0.05) 1px, transparent 1px);
+    background-size: 18px 18px;
+  }
+
+  .glass-panel { background: rgba(255,255,255,0.82); backdrop-filter: blur(14px); border: 1px solid rgba(36,27,47,0.07); }
 
   /* MAP */
   #world-map-svg {
@@ -64,10 +76,10 @@ tailwind.config = {
     font-family: 'Plus Jakarta Sans', sans-serif;
     font-size: 16px; font-weight: 600;
     outline: none; background: transparent;
-    width: 100%; color: #191c1e;
+    width: 100%; color: var(--ink);
     caret-color: #006d36;
   }
-  #country-input::placeholder { color: #94a3b8; font-weight: 400; }
+  #country-input::placeholder { color: #a39bb0; font-weight: 400; }
   #country-input:disabled { cursor: not-allowed; }
 
   /* BUTTONS */
@@ -76,26 +88,40 @@ tailwind.config = {
     padding: 9px 22px; transition: all 0.15s; border: none;
     cursor: pointer; letter-spacing: 0.02em; display: flex;
     align-items: center; justify-content: center; gap: 6px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
   }
   .btn-green { background: #006d36; color: white; box-shadow: 0 4px 14px rgba(0,109,54,0.3); }
   .btn-green:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(0,109,54,0.4); }
   .btn-green:active { transform: scale(0.97); }
-  .btn-slate { background: #f1f5f9; color: #475569; }
-  .btn-slate:hover { background: #e2e8f0; }
+  .btn-slate { background: rgba(36,27,47,0.06); color: #57506a; }
+  .btn-slate:hover { background: rgba(36,27,47,0.1); }
   .btn-red { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
   .btn-red:hover { background: #fee2e2; }
 
-  /* TAGS */
+  /* COUNTRY TAGS — styled as little passport stamps */
   .country-tag {
-    display: inline-flex; align-items: center; gap: 3px;
-    background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;
-    font-size: 11px; font-weight: 600;
-    padding: 2px 9px; border-radius: 99px;
+    display: inline-flex; align-items: center; gap: 4px;
+    background: transparent;
+    color: #166534;
+    border: 1.5px dashed #4d9b6f;
+    font-family: 'Inter', sans-serif;
+    font-size: 10.5px; font-weight: 700;
+    letter-spacing: 0.03em;
+    padding: 3px 11px; border-radius: 99px;
+    transform: rotate(-2deg);
     animation: tagIn 0.25s cubic-bezier(0.34,1.56,0.64,1);
   }
+  .country-tag:nth-child(even){ transform: rotate(1.5deg); }
+  .country-tag:nth-child(3n){ transform: rotate(-1deg); }
   @keyframes tagIn {
     from { opacity: 0; transform: scale(0.7); }
     to   { opacity: 1; transform: scale(1); }
+  }
+
+  /* missed countries get a "void" stamp treatment */
+  #missed-list .country-tag {
+    border-color: #e2a8a8;
+    color: #b54545;
   }
 
   /* SHAKE */
@@ -115,7 +141,14 @@ tailwind.config = {
     from { opacity: 0; transform: scale(0.88) translateY(24px); }
     to   { opacity: 1; transform: scale(1) translateY(0); }
   }
-  .modal-card { animation: modalIn 0.35s cubic-bezier(0.34,1.56,0.64,1) both; }
+  .modal-card { animation: modalIn 0.35s cubic-bezier(0.34,1.56,0.64,1) both; background: var(--paper); }
+
+  /* the "countries found" pill, restyled as a wax/passport stamp */
+  .stamp-badge{
+    position: relative;
+    border: 2px dashed rgba(255,255,255,0.55);
+    transform: rotate(-3deg);
+  }
 
   /* PROGRESS */
   #progress-bar { transition: width 0.6s cubic-bezier(0.4,0,0.2,1); }
@@ -134,7 +167,7 @@ tailwind.config = {
 
   /* STAT PILL */
   .stat-row { display: flex; align-items: center; justify-content: space-between; }
-  .stat-label { font-size: 12px; color: #64748b; font-weight: 500; }
+  .stat-label { font-size: 12px; color: #6b6378; font-weight: 500; }
   .stat-val { font-size: 14px; font-weight: 800; }
 </style>
 <script src="navbar.js" defer></script>
@@ -163,8 +196,8 @@ tailwind.config = {
           spellcheck="false"
           disabled
         />
-        <div id="input-feedback" class="text-xs font-bold whitespace-nowrap min-w-[90px] text-right"></div>
-        <kbd class="hidden sm:flex items-center gap-1 px-2 py-1 bg-slate-100 text-slate-400 text-[10px] font-bold rounded-md border border-slate-200 flex-shrink-0">
+        <div id="input-feedback" class="font-eyebrow text-xs font-bold whitespace-nowrap min-w-[90px] text-right"></div>
+        <kbd class="hidden sm:flex items-center gap-1 px-2 py-1 bg-[#241B2F]/[0.04] text-[#241B2F]/40 text-[10px] font-bold rounded-md border border-[#241B2F]/10 flex-shrink-0">
           Enter ↵
         </kbd>
       </div>
@@ -173,24 +206,24 @@ tailwind.config = {
         <div class="glass-panel rounded-[22px] flex-1 overflow-hidden relative">
 
         <!-- Placeholder -->
-        <div id="map-placeholder" class="absolute inset-0 flex items-center justify-center flex-col gap-4 z-10 rounded-[22px]" style="background:rgba(248,250,252,0.95)">
+        <div id="map-placeholder" class="absolute inset-0 flex items-center justify-center flex-col gap-4 z-10 rounded-[22px]" style="background:rgba(251,248,242,0.96)">
           <div class="w-16 h-16 rounded-2xl bg-emerald-50 flex items-center justify-center">
-            <span class="material-symbols-outlined text-4xl text-emerald-400">public</span>
+            <span class="material-symbols-outlined text-4xl text-emerald-500">public</span>
           </div>
           <div class="text-center">
-            <p class="text-sm font-bold text-slate-600">Ready to test your geography?</p>
-            <p class="text-xs text-slate-400 mt-1">Click "Start Game" to load the map</p>
+            <p class="font-display text-base text-[#241B2F] italic">Ready to test your geography?</p>
+            <p class="font-eyebrow text-[10px] text-[#241B2F]/40 mt-1 uppercase">Click "Start Game" to load the map</p>
           </div>
         </div>
 
         <!-- Loading -->
-        <div id="map-loading" class="absolute inset-0 hidden items-center justify-center flex-col gap-4 z-10 rounded-[22px]" style="background:rgba(248,250,252,0.95)">
+        <div id="map-loading" class="absolute inset-0 hidden items-center justify-center flex-col gap-4 z-10 rounded-[22px]" style="background:rgba(251,248,242,0.96)">
           <div class="flex gap-2">
             <div class="map-loading-dot"></div>
             <div class="map-loading-dot"></div>
             <div class="map-loading-dot"></div>
           </div>
-          <p class="text-xs font-semibold text-slate-400">Loading world map...</p>
+          <p class="font-eyebrow text-[10px] font-semibold text-[#241B2F]/40 uppercase">Loading world map...</p>
         </div>
 
         <!-- SVG Container -->
@@ -208,24 +241,24 @@ tailwind.config = {
       <div class="glass-panel rounded-[22px] p-4 flex flex-col gap-3">
         <div class="flex items-start justify-between">
           <div>
-            <p class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Time</p>
-            <p id="timer-display" class="text-3xl font-black text-slate-800 tabular-nums tracking-tight">00:00</p>
+            <p class="font-eyebrow text-[9px] font-black uppercase text-[#241B2F]/40 mb-0.5">Time</p>
+            <p id="timer-display" class="font-display text-3xl font-semibold text-[#241B2F] tabular-nums tracking-tight">00:00</p>
           </div>
           <div class="text-right">
-            <p class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Found</p>
-            <p class="text-3xl font-black text-slate-800">
+            <p class="font-eyebrow text-[9px] font-black uppercase text-[#241B2F]/40 mb-0.5">Found</p>
+            <p class="font-display text-3xl font-semibold text-[#241B2F]">
               <span id="found-count" class="text-emerald-700">0</span>
-              <span class="text-base text-slate-300 font-medium">/195</span>
+              <span class="text-base text-[#241B2F]/25 font-medium">/195</span>
             </p>
           </div>
         </div>
 
         <!-- Progress -->
         <div class="space-y-1">
-          <div class="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+          <div class="h-1.5 bg-[#241B2F]/[0.06] rounded-full overflow-hidden">
             <div id="progress-bar" class="h-full rounded-full" style="width:0%;background:linear-gradient(90deg,#4ade80,#006d36)"></div>
           </div>
-          <p id="progress-pct" class="text-[10px] text-slate-400 font-medium text-right">0%</p>
+          <p id="progress-pct" class="font-eyebrow text-[10px] text-[#241B2F]/35 font-medium text-right">0%</p>
         </div>
 
         <!-- Buttons -->
@@ -252,7 +285,7 @@ tailwind.config = {
 
       <!-- Stats -->
       <div class="glass-panel rounded-[22px] p-4 flex flex-col gap-2.5">
-        <p class="text-[9px] font-black uppercase tracking-widest text-slate-400">Statistics</p>
+        <p class="font-eyebrow text-[9px] font-black uppercase text-[#241B2F]/40">Statistics</p>
         <div class="stat-row">
           <span class="stat-label">Wrong guesses</span>
           <span id="wrong-count" class="stat-val text-red-500">0</span>
@@ -274,58 +307,58 @@ tailwind.config = {
       <!-- Found list -->
       <div class="glass-panel rounded-[22px] p-4 flex flex-col gap-2 flex-1 overflow-hidden">
         <div class="flex items-center justify-between">
-          <p class="text-[9px] font-black uppercase tracking-widest text-slate-400">Countries Found</p>
+          <p class="font-eyebrow text-[9px] font-black uppercase text-[#241B2F]/40">Countries Found</p>
           <span id="found-count-2" class="text-xs font-black text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">0</span>
         </div>
-        <div id="found-list" class="flex flex-wrap gap-1 overflow-y-auto hide-scrollbar flex-1 content-start"></div>
+        <div id="found-list" class="flex flex-wrap gap-1.5 overflow-y-auto hide-scrollbar flex-1 content-start"></div>
       </div>
     </div>
   </div>
 </main>
 
 <!-- END MODAL -->
-<div id="end-modal" class="fixed inset-0 z-50 items-center justify-center" style="background:rgba(15,20,30,0.6);backdrop-filter:blur(8px);">
-  <div class="modal-card bg-white rounded-[28px] shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+<div id="end-modal" class="fixed inset-0 z-50 items-center justify-center" style="background:rgba(20,15,26,0.6);backdrop-filter:blur(8px);">
+  <div class="modal-card rounded-[28px] shadow-2xl w-full max-w-md mx-4 overflow-hidden">
 
     <div id="modal-header" class="px-8 pt-8 pb-6 text-center">
       <div id="modal-emoji" class="text-5xl mb-3">🌍</div>
-      <h2 class="text-3xl font-black text-white tracking-tight">Game Over</h2>
+      <h2 class="font-display text-3xl font-semibold text-white tracking-tight">Game Over</h2>
       <p id="modal-subtitle" class="text-white/80 text-sm mt-1 font-medium"></p>
-      <div class="mt-4 bg-white/15 rounded-2xl px-6 py-3 inline-block">
-        <p class="text-white/60 text-[10px] font-black uppercase tracking-widest">Countries Found</p>
-        <p id="modal-found" class="text-4xl font-black text-white mt-0.5">0 / 195</p>
+      <div class="stamp-badge mt-4 bg-white/15 rounded-2xl px-6 py-3 inline-block">
+        <p class="font-eyebrow text-white/60 text-[10px] font-black uppercase">Countries Found</p>
+        <p id="modal-found" class="font-display text-4xl font-semibold text-white mt-0.5">0 / 195</p>
       </div>
     </div>
 
     <div class="px-8 py-5">
-      <div class="bg-slate-50 rounded-2xl p-4 space-y-2.5 mb-4">
+      <div class="bg-[#241B2F]/[0.03] rounded-2xl p-4 space-y-2.5 mb-4">
         <div class="flex justify-between text-sm">
-          <span class="text-slate-400 font-medium">Time</span>
-          <span id="modal-time" class="font-black text-slate-700">—</span>
+          <span class="text-[#241B2F]/40 font-medium">Time</span>
+          <span id="modal-time" class="font-black text-[#241B2F]">—</span>
         </div>
         <div class="flex justify-between text-sm">
-          <span class="text-slate-400 font-medium">Wrong guesses</span>
+          <span class="text-[#241B2F]/40 font-medium">Wrong guesses</span>
           <span id="modal-wrong" class="font-black text-red-500">—</span>
         </div>
         <div class="flex justify-between text-sm">
-          <span class="text-slate-400 font-medium">Accuracy</span>
+          <span class="text-[#241B2F]/40 font-medium">Accuracy</span>
           <span id="modal-accuracy" class="font-black text-emerald-600">—</span>
         </div>
         <div class="flex justify-between text-sm">
-          <span class="text-slate-400 font-medium">Best streak</span>
+          <span class="text-[#241B2F]/40 font-medium">Best streak</span>
           <span id="modal-streak" class="font-black text-amber-600">—</span>
         </div>
-        <hr class="border-slate-200"/>
+        <hr class="border-[#241B2F]/10"/>
         <div class="flex justify-between items-center">
-          <span class="text-slate-500 font-bold text-sm">Score</span>
-          <span id="modal-score" class="text-2xl font-black text-emerald-700">—</span>
+          <span class="text-[#241B2F]/60 font-bold text-sm">Score</span>
+          <span id="modal-score" class="font-display text-2xl font-semibold text-emerald-700">—</span>
         </div>
       </div>
 
       <!-- Missed countries -->
       <div id="missed-section" class="hidden mb-4">
-        <p class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Missed Countries</p>
-        <div id="missed-list" class="flex flex-wrap gap-1 max-h-20 overflow-y-auto hide-scrollbar"></div>
+        <p class="font-eyebrow text-[9px] font-black uppercase text-[#241B2F]/40 mb-2">Missed Countries</p>
+        <div id="missed-list" class="flex flex-wrap gap-1.5 max-h-20 overflow-y-auto hide-scrollbar"></div>
       </div>
 
       <div class="flex gap-2">
