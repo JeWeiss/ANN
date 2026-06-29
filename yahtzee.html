@@ -1,11 +1,13 @@
 <!DOCTYPE html>
-<html lang="he" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Atar Noder Neder | Yahtzee</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Inter:wght@400;600;800&family=Caveat:wght@600;700&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 <script>
 tailwind.config = {
@@ -16,11 +18,11 @@ tailwind.config = {
         "primary-container": "#50c878", "on-primary-container": "#005025",
         "secondary": "#516169", "secondary-container": "#d2e2ec",
         "on-secondary-container": "#55656d",
-        "surface": "#f7f9fb", "surface-container": "#eceef0",
-        "surface-container-low": "#f2f4f6",
-        "on-surface": "#191c1e", "on-surface-variant": "#3e4a3f",
-        "outline": "#6e7a6e", "outline-variant": "#bdcabc",
-        "background": "#f7f9fb",
+        "surface": "#FBF8F2", "surface-container": "#F3ECDC",
+        "surface-container-low": "#F8F4E9",
+        "on-surface": "#241B2F", "on-surface-variant": "#5c5468",
+        "outline": "#bdb39a", "outline-variant": "#ddd4ba",
+        "background": "#FBF8F2",
       },
       fontFamily: { "body": ["Plus Jakarta Sans"] },
     },
@@ -28,30 +30,44 @@ tailwind.config = {
 }
 </script>
 <style>
+  :root{ --paper:#FBF8F2; --ink:#241B2F; --maroon:#8E0045; --forest:#006d36; --terracotta:#D66F4B; --brass:#C9952C; --cream:#F3ECDC; }
   body { font-family: 'Plus Jakarta Sans', sans-serif; }
+  .font-display{ font-family:'Fraunces', serif; }
+  .font-eyebrow{ font-family:'Inter', sans-serif; letter-spacing:0.13em; }
+  .font-hand{ font-family:'Caveat', cursive; }
   .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
   .hide-scrollbar::-webkit-scrollbar { display: none; }
   .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-  .glass-panel { background: rgba(255,255,255,0.6); backdrop-filter: blur(12px); border: 1px solid rgba(226,232,240,0.8); }
 
+  body.bg-background{
+    background-image: radial-gradient(rgba(36,27,47,0.06) 1px, transparent 1px);
+    background-size: 18px 18px;
+  }
+
+  .glass-panel {
+    background:#fff; border:1px solid rgba(36,27,47,0.08);
+    border-radius:10px; box-shadow:3px 3px 0 rgba(36,27,47,0.07);
+  }
+
+  /* ---- Dice: wooden game pieces instead of glossy felt dice ---- */
   .die {
-    width: 80px; height: 80px;
-    border-radius: 20px;
-    background: white;
-    border: 2px solid #e2e8f0;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    width: 76px; height: 76px;
+    border-radius: 8px;
+    background: var(--cream);
+    border: 2px solid var(--ink);
+    box-shadow: 3px 3px 0 rgba(36,27,47,0.18);
     display: flex; align-items: center; justify-content: center;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.15s ease;
     position: relative;
     user-select: none;
   }
-  .die:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+  .die:hover { transform: translateY(-2px); box-shadow: 4px 5px 0 rgba(36,27,47,0.22); }
   .die.held {
-    background: #006d36;
-    border-color: #006d36;
-    box-shadow: 0 6px 20px rgba(0,109,54,0.35);
-    transform: translateY(-6px);
+    background: var(--brass);
+    border-color: #8E5A0E;
+    box-shadow: 3px 4px 0 rgba(110,58,18,0.4);
+    transform: translateY(-4px);
   }
   .die.rolling { animation: rollAnim 0.5s ease; }
   @keyframes rollAnim {
@@ -63,48 +79,69 @@ tailwind.config = {
   }
 
   .score-row { transition: background 0.15s; cursor: pointer; }
-  .score-row:hover td { background: #f0fdf4; }
+  .score-row:hover td { background: var(--cream); }
   .score-row.scored { cursor: default; }
   .score-row.scored:hover td { background: transparent; }
-  .score-row.preview td.score-cell { color: #059669; font-style: italic; }
-  .score-row.used td.score-cell { color: #191c1e; font-weight: 700; }
-  .score-row.zero td.score-cell { color: #9ca3af; font-weight: 600; }
+  .score-row.preview td.score-cell { color: var(--forest); font-style: italic; }
+  .score-row.used td.score-cell { color: var(--ink); font-weight: 700; }
+  .score-row.zero td.score-cell { color: #a39a86; font-weight: 600; }
 
   .roll-btn {
-    background: #006d36; color: white;
-    border-radius: 9999px; font-weight: 900;
-    padding: 14px 48px; font-size: 15px;
-    letter-spacing: 0.15em; text-transform: uppercase;
-    box-shadow: 0 8px 24px rgba(0,109,54,0.3);
-    transition: all 0.2s; border: none; cursor: pointer;
+    background: var(--forest); color: white;
+    border-radius: 8px; font-weight: 900;
+    padding: 13px 44px; font-size: 14px;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    box-shadow: 2px 3px 0 #00431F;
+    transition: all 0.15s; border: none; cursor: pointer;
+    font-family: 'Plus Jakarta Sans', sans-serif;
   }
-  .roll-btn:hover:not(:disabled) { transform: scale(1.05); box-shadow: 0 12px 32px rgba(0,109,54,0.4); }
-  .roll-btn:active:not(:disabled) { transform: scale(0.97); }
-  .roll-btn:disabled { background: #9ca3af; box-shadow: none; cursor: not-allowed; transform: none; }
+  .roll-btn:hover:not(:disabled) { transform: translate(-1px,-1px); box-shadow: 3px 4px 0 #00431F; }
+  .roll-btn:active:not(:disabled) { transform: translate(1px,1px); box-shadow: 0 0 0 #00431F; }
+  .roll-btn:disabled { background: #bdb39a; box-shadow: none; cursor: not-allowed; transform: none; }
 
   .held-label {
     position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%);
     font-size: 9px; font-weight: 900; letter-spacing: 0.1em;
-    color: #006d36; text-transform: uppercase;
+    color: var(--brass); text-transform: uppercase;
   }
 
-  /* סוף משחק */
+  /* ---- Scorecard: hand-filled paper sheet ---- */
+  .scoresheet{
+    position:relative;
+    background:
+      repeating-linear-gradient(var(--cream) 0px, var(--cream) 22px, rgba(36,27,47,0.07) 23px),
+      var(--cream);
+    border:1px solid rgba(36,27,47,0.08);
+    border-left:3px solid #C46A6A;
+    border-radius:10px;
+    box-shadow:3px 3px 0 rgba(36,27,47,0.07);
+  }
+
+  /* ---- End screen: Expedition Stamp / Logbook ---- */
   #win-modal { display: none; }
   #win-modal.open { display: flex; }
-
-  @keyframes modalIn {
-    from { opacity: 0; transform: scale(0.92) translateY(20px); }
-    to   { opacity: 1; transform: scale(1) translateY(0); }
+  @keyframes modalIn { from { opacity:0; transform: translateY(16px) rotate(-0.4deg); } to { opacity:1; transform: translateY(0) rotate(0); } }
+  .modal-card { animation: modalIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both; background:#F0E6CC; border-radius:10px; position:relative; box-shadow: 6px 8px 0 rgba(36,27,47,0.18); }
+  .modal-card::before{
+    content:''; position:absolute; top:-7px; left:8px; right:8px; height:7px;
+    background: linear-gradient(135deg,#F0E6CC 50%, transparent 50%), linear-gradient(45deg,#F0E6CC 50%, transparent 50%);
+    background-size:14px 14px; background-position:0 0,7px 0; background-repeat:repeat-x;
   }
-  .modal-card { animation: modalIn 0.35s cubic-bezier(0.34,1.56,0.64,1) both; }
-
+  .wax-seal{
+    width:60px; height:60px; border-radius:50%;
+    background: radial-gradient(circle at 35% 30%, #C0573F, #8E2F1F);
+    border:2px dashed rgba(255,255,255,0.5);
+    display:flex; align-items:center; justify-content:center;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.3), inset 0 0 0 4px rgba(0,0,0,0.08);
+    margin:0 auto;
+  }
+  .ledger-row{ display:flex; align-items:baseline; gap:6px; font-size:13px; }
+  .ledger-fill{ flex:1; border-bottom:1px dotted rgba(36,27,47,0.3); margin-bottom:3px; }
   .rating-badge {
-    display: inline-block;
-    padding: 6px 20px;
-    border-radius: 9999px;
-    font-size: 13px;
-    font-weight: 800;
-    letter-spacing: 0.05em;
+    display:inline-block; padding:5px 18px; border-radius:8px;
+    font-size:12px; font-weight:800; letter-spacing:0.05em;
+    font-family:'Inter', sans-serif; text-transform:uppercase;
+    border:1.5px dashed currentColor;
   }
 </style>
 <script src="navbar.js" defer></script>
@@ -119,146 +156,122 @@ tailwind.config = {
 
   <div class="flex-1 p-6 grid grid-cols-12 gap-6 overflow-hidden">
 
-    <!-- Left: Facts + Summary -->
-    <section class="col-span-3 glass-panel rounded-[28px] p-6 flex flex-col gap-4 overflow-y-auto hide-scrollbar">
-      <h3 class="text-[10px] font-black tracking-[0.2em] text-emerald-800 uppercase">World Fact of the Day</h3>
-      <div class="flex flex-col gap-3">
-        <div class="w-8 h-1 bg-emerald-500 rounded-full"></div>
-        <p class="text-sm font-bold text-on-surface leading-snug">הידעת?</p>
-        <p class="text-xs text-on-surface-variant leading-relaxed">אם היית פותח את כל סלילי ה-DNA שבגוף שלך ומחבר אותם בקו ישר, הם היו מגיעים מהארץ לשמש ובחזרה 600 פעמים.</p>
-      </div>
-      <hr class="border-slate-200">
-      <div class="flex flex-col gap-3">
-        <div class="w-8 h-1 bg-blue-500 rounded-full"></div>
-        <p class="text-xs text-on-surface-variant leading-relaxed">צרפת הפסיקה להשתמש בגיליוטינה להוצאות להורג רק ב-1977 — אותה שנה שיצא Star Wars.</p>
-      </div>
-      <button onclick="newGame()" class="px-5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-full font-bold text-xs uppercase tracking-widest transition-colors">
-        New Game
-      </button>
-      <div class="mt-2 bg-emerald-50 rounded-2xl p-4 space-y-3">
-        <p class="text-[10px] font-black uppercase tracking-widest text-emerald-800">Score Summary</p>
-        <div class="flex justify-between text-xs font-bold">
-          <span class="text-on-surface-variant">Upper Section</span>
-          <span id="upper-total-disp" class="text-on-surface">0</span>
-        </div>
-        <div class="flex justify-between text-xs font-bold">
-          <span class="text-on-surface-variant">Bonus (63+)</span>
-          <span id="bonus-disp" class="text-on-surface">0</span>
-        </div>
-        <div class="flex justify-between text-xs font-bold">
-          <span class="text-on-surface-variant">Lower Section</span>
-          <span id="lower-total-disp" class="text-on-surface">0</span>
-        </div>
-        <hr class="border-emerald-200">
-        <div class="flex justify-between text-sm font-black">
-          <span class="text-emerald-900">Total Score</span>
-          <span id="grand-total-disp" class="text-emerald-700">0</span>
-        </div>
-      </div>
-      <p id="game-message" class="text-xs font-bold text-emerald-700 text-center min-h-[16px]"></p>
-    </section>
-
-    <!-- Center: Dice -->
-    <section class="col-span-6 flex flex-col items-center justify-center gap-8">
-      <div class="glass-panel rounded-[28px] px-10 py-8 flex flex-col items-center gap-6 w-full">
-        <p class="text-[10px] font-black tracking-[0.2em] uppercase text-emerald-800">Click dice to hold them</p>
-        <div class="flex gap-4 pb-6" id="dice-container"></div>
-        <div class="flex items-center gap-3">
-          <span class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Rolls left:</span>
-          <div class="flex gap-2" id="rolls-pips">
-            <div class="w-3 h-3 rounded-full bg-emerald-500"></div>
-            <div class="w-3 h-3 rounded-full bg-emerald-500"></div>
-            <div class="w-3 h-3 rounded-full bg-emerald-500"></div>
-          </div>
-          <span id="rolls-text" class="text-xs font-black text-emerald-700">3 remaining</span>
-        </div>
-        <button id="roll-btn" class="roll-btn" onclick="rollDice()">🎲 Roll Dice</button>
-      </div>
-
-      <div class="glass-panel rounded-[28px] px-8 py-4 w-full flex items-center justify-between">
-        <div>
-          <p class="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">Turn</p>
-          <p id="turn-display" class="text-2xl font-black text-emerald-900">1 / 13</p>
-        </div>
-        <div class="text-center">
-          <p class="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">Dice Values</p>
-          <p id="dice-values" class="text-lg font-black text-slate-700">— — — — —</p>
-        </div>
-        <div class="text-right">
-          <p class="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">Total Score</p>
-          <p id="total-score-display" class="text-2xl font-black text-emerald-700">0</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- Right: Scorecard -->
-    <section class="col-span-3 glass-panel rounded-[28px] p-5 flex flex-col overflow-hidden">
-      <h3 class="text-[10px] font-black tracking-[0.2em] text-emerald-800 uppercase mb-3">Scorecard</h3>
-      <div class="flex-1 overflow-y-auto hide-scrollbar">
+        <!-- Left: Scorecard -->
+    <section class="col-span-3 glass-panel p-5 flex flex-col overflow-hidden">
+      <h3 class="text-[10px] font-black tracking-[0.2em] text-[var(--maroon)] uppercase mb-3 font-eyebrow">Scorecard</h3>
+      <div class="flex-1 overflow-y-auto hide-scrollbar scoresheet px-2">
         <table class="w-full text-sm">
           <thead>
             <tr>
-              <th class="text-left py-1 text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Category</th>
-              <th class="text-right py-1 text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Score</th>
+              <th class="text-left py-1 pl-2 text-[10px] font-black text-on-surface-variant uppercase tracking-widest font-eyebrow">Category</th>
+              <th class="text-right py-1 pr-2 text-[10px] font-black text-on-surface-variant uppercase tracking-widest font-eyebrow">Score</th>
             </tr>
           </thead>
           <tbody id="scorecard-body"></tbody>
         </table>
+        <button onclick="newGame()" class="w-full px-8 py-2 bg-[#8B7A5F] hover:bg-[#A3927C] text-white rounded-[8px] font-bold text-xs uppercase tracking-widest transition-colors">
+        New Game
+        </button>
       </div>
+    </section>
+
+
+    
+
+    <!-- Center: Dice -->
+    <section class="col-span-6 flex flex-col items-center justify-center gap-8">
+      <div class="glass-panel px-10 py-8 flex flex-col items-center gap-6 w-full">
+        <p class="text-[10px] font-black tracking-[0.2em] uppercase text-[var(--maroon)] font-eyebrow">Click dice to hold them</p>
+        <div class="flex gap-4 pb-6" id="dice-container"></div>
+        <div class="flex items-center gap-3">
+          <span class="text-xs font-bold text-on-surface-variant uppercase tracking-widest font-eyebrow">Rolls left:</span>
+          <div class="flex gap-2" id="rolls-pips">
+            <div class="w-3 h-3 rounded-full bg-[var(--forest)]"></div>
+            <div class="w-3 h-3 rounded-full bg-[var(--forest)]"></div>
+            <div class="w-3 h-3 rounded-full bg-[var(--forest)]"></div>
+          </div>
+          <span id="rolls-text" class="text-xs font-black text-[var(--forest)]">3 remaining</span>
+        </div>
+        <button id="roll-btn" class="roll-btn" onclick="rollDice()">Roll Dice</button>
+      </div>
+
+      <div class="glass-panel px-8 py-4 w-full flex items-center justify-between">
+        <div>
+          <p class="text-[10px] font-black uppercase tracking-widest text-on-surface-variant font-eyebrow">Turn</p>
+          <p id="turn-display" class="text-2xl font-black text-[var(--maroon)] font-display">1 / 13</p>
+        </div>
+        <div class="text-center">
+          <p class="text-[10px] font-black uppercase tracking-widest text-on-surface-variant font-eyebrow">Dice Values</p>
+          <p id="dice-values" class="text-lg font-black text-on-surface font-display">— — — — —</p>
+        </div>
+        <div class="text-right">
+          <p class="text-[10px] font-black uppercase tracking-widest text-on-surface-variant font-eyebrow">Total Score</p>
+          <p id="total-score-display" class="text-2xl font-black text-[var(--forest)] font-display">0</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right: Field Notes + Summary -->
+    <section class="col-span-3 glass-panel p-6 flex flex-col gap-4 overflow-y-auto hide-scrollbar">
+      <h3 class="text-[10px] font-black tracking-[0.2em] text-[var(--maroon)] uppercase font-eyebrow">Field Notes</h3>
+      <div class="flex flex-col gap-3">
+        <div class="w-8 h-1 bg-[var(--forest)] rounded-full"></div>
+        <p class="text-sm font-bold text-on-surface leading-snug font-display">Did you know?</p>
+        <p class="text-xs text-on-surface-variant leading-relaxed">If you unwound all the DNA in your body and connected it in a straight line, it would stretch from Earth to the Sun and back 600 times.</p>
+      </div>
+      <hr class="border-[var(--ink)]/10">
+      <div class="flex flex-col gap-3">
+        <div class="w-8 h-1 bg-[var(--terracotta)] rounded-full"></div>
+        <p class="text-xs text-on-surface-variant leading-relaxed">France only stopped using the guillotine for executions in 1977 — the same year Star Wars came out.</p>
+      </div>
+      <div class="mt-2 scoresheet p-4 space-y-3">
+        <p class="text-[10px] font-black uppercase tracking-widest text-[var(--maroon)] font-eyebrow">Score Summary</p>
+        <div class="ledger-row"><span class="text-on-surface-variant font-bold">Upper Section</span><span class="ledger-fill"></span><span id="upper-total-disp" class="text-on-surface font-black">0</span></div>
+        <div class="ledger-row"><span class="text-on-surface-variant font-bold">Bonus (63+)</span><span class="ledger-fill"></span><span id="bonus-disp" class="text-on-surface font-black">0</span></div>
+        <div class="ledger-row"><span class="text-on-surface-variant font-bold">Lower Section</span><span class="ledger-fill"></span><span id="lower-total-disp" class="text-on-surface font-black">0</span></div>
+        <div class="ledger-row pt-1" style="border-top:1px dashed rgba(36,27,47,0.25); font-weight:800;">
+          <span class="text-[var(--maroon)]">Total Score</span><span class="ledger-fill"></span><span id="grand-total-disp" class="text-[var(--forest)] font-display text-lg">0</span>
+        </div>
+      </div>
+      <p id="game-message" class="text-xs font-bold text-[var(--forest)] text-center min-h-[16px] font-eyebrow uppercase"></p>
     </section>
   </div>
 </main>
 
-<!-- ===== מסך סוף משחק ===== -->
-<div id="win-modal" class="fixed inset-0 z-50 items-center justify-center" style="background: rgba(0,0,0,0.55); backdrop-filter: blur(6px);">
-  <div class="modal-card bg-white rounded-[36px] shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
-    
-    <!-- Header צבעוני -->
-    <div id="modal-header" class="px-10 pt-10 pb-6 text-center" style="background: linear-gradient(135deg,#006d36 0%,#10b981 100%);">
-      <div id="modal-emoji" class="text-6xl mb-3">🎲</div>
-      <h2 class="text-4xl font-black text-white tracking-tighter">Game Over!</h2>
-      <p class="text-emerald-100 text-sm mt-1">all 13 turnes completed</p>
-      <div class="mt-4 bg-white/20 rounded-2xl px-6 py-3 inline-block">
-        <p class="text-white/80 text-xs font-bold uppercase tracking-widest">Total Score</p>
-        <p id="modal-score" class="text-5xl font-black text-white">0</p>
+<!-- ===== End-game: Expedition Stamp ===== -->
+<div id="win-modal" class="fixed inset-0 z-50 items-center justify-center" style="background: rgba(20,15,26,0.62);">
+  <div class="modal-card w-full max-w-lg mx-4 overflow-hidden">
+
+    <div id="modal-header" class="px-10 pt-9 pb-6 text-center" style="background: linear-gradient(135deg,#00431F 0%,#006d36 100%);">
+      <div class="wax-seal"><span id="modal-emoji" class="text-2xl"></span></div>
+      <h2 class="font-display text-3xl font-semibold text-white tracking-tight mt-3">Game Over!</h2>
+      <p class="text-white/85 text-sm mt-1">All 13 turns completed</p>
+      <div class="mt-4 inline-block border border-dashed border-white/40 rounded-[8px] px-6 py-3">
+        <p class="text-white/65 text-[10px] font-black uppercase tracking-widest font-eyebrow">Total Score</p>
+        <p id="modal-score" class="font-display text-4xl font-semibold text-white">0</p>
       </div>
     </div>
 
-    <!-- גוף -->
-    <div class="px-10 py-6">
-      <!-- דירוג -->
+    <div class="px-10 py-6" style="background:#F0E6CC">
       <div class="text-center mb-5">
         <span id="modal-rating-badge" class="rating-badge">nice one!</span>
       </div>
 
-      <!-- פירוט ניקוד -->
-      <div class="bg-slate-50 rounded-2xl p-4 space-y-2 mb-5">
-        <div class="flex justify-between text-sm font-bold">
-          <span class="text-slate-500">Upper Section</span>
-          <span id="modal-upper" class="text-slate-800">0</span>
-        </div>
-        <div class="flex justify-between text-sm font-bold">
-          <span class="text-slate-500">Bonus (63+)</span>
-          <span id="modal-bonus" class="text-emerald-600">0</span>
-        </div>
-        <div class="flex justify-between text-sm font-bold">
-          <span class="text-slate-500">Lower Section</span>
-          <span id="modal-lower" class="text-slate-800">0</span>
-        </div>
-        <hr class="border-slate-200">
-        <div class="flex justify-between items-center pt-1">
-          <span class="font-black text-slate-800">TOTAL</span>
-          <span id="modal-score-2" class="text-2xl font-black text-emerald-700">0</span>
+      <div class="space-y-2 mb-5">
+        <div class="ledger-row" style="color:var(--ink)"><span>Upper Section</span><span class="ledger-fill"></span><span id="modal-upper" class="font-bold">0</span></div>
+        <div class="ledger-row" style="color:var(--ink)"><span>Bonus (63+)</span><span class="ledger-fill"></span><span id="modal-bonus" class="font-bold text-[var(--forest)]">0</span></div>
+        <div class="ledger-row" style="color:var(--ink)"><span>Lower Section</span><span class="ledger-fill"></span><span id="modal-lower" class="font-bold">0</span></div>
+        <div class="ledger-row pt-1.5 mt-1" style="border-top:1px dashed rgba(36,27,47,0.25); font-weight:800; color:var(--ink)">
+          <span>TOTAL</span><span class="ledger-fill"></span><span id="modal-score-2" class="font-display text-xl text-[var(--forest)]">0</span>
         </div>
       </div>
 
-      <!-- כפתורים -->
       <div class="flex gap-3">
         <button onclick="newGame()" class="roll-btn flex-1 text-center py-3 px-6 text-sm">
-          🔄 Play Again
+          Play Again
         </button>
-        <a href="index.html" class="flex-1 text-center py-3 px-6 text-sm font-black uppercase tracking-widest rounded-full border-2 border-emerald-700 text-emerald-700 hover:bg-emerald-50 transition-colors">
-          🏠 Lobby
+        <a href="index.html" class="flex-1 text-center py-3 px-6 text-sm font-black uppercase tracking-widest rounded-[8px] border-2 border-[var(--forest)] text-[var(--forest)] hover:bg-[var(--cream)] transition-colors">
+          Lobby
         </a>
       </div>
     </div>
@@ -345,7 +358,7 @@ function renderDice() {
     const die = document.createElement("div");
     die.className = "die" + (held[i] ? " held" : "");
     die.onclick = () => toggleHold(i);
-    die.innerHTML = val > 0 ? buildPips(val, held[i]) : `<span style="font-size:28px;color:#cbd5e1;">?</span>`;
+    die.innerHTML = val > 0 ? buildPips(val, held[i]) : `<span style="font-size:26px;color:#bdb39a;">?</span>`;
 
     if (held[i]) {
       const lbl = document.createElement("div");
@@ -362,7 +375,8 @@ function renderDice() {
 }
 
 function buildPips(n, isHeld) {
-  const c = isHeld ? "background:white" : "background:#191c1e";
+  // Cosmetic: pip ink color swapped from #191c1e to the site ink (#241B2F) for consistency.
+  const c = isHeld ? "background:white" : "background:#241B2F";
   const p = () => `<div style="${c};width:10px;height:10px;border-radius:50%;"></div>`;
   const e = () => `<div style="width:10px;height:10px;"></div>`;
   const L = {
@@ -446,7 +460,7 @@ function renderScorecard() {
 
   const addHdr = label => {
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td colspan="2" class="pt-3 pb-1 text-[9px] font-black uppercase tracking-widest text-emerald-700">${label}</td>`;
+    tr.innerHTML = `<td colspan="2" class="pt-3 pb-1 pl-2 text-[9px] font-black uppercase tracking-widest text-[var(--maroon)]">${label}</td>`;
     tbody.appendChild(tr);
   };
 
@@ -457,9 +471,9 @@ function renderScorecard() {
   const bonus = getBonus();
   const bonusRow = document.createElement("tr");
   bonusRow.innerHTML = `
-    <td class="py-2 pl-2 text-xs text-emerald-700 font-bold">Bonus (need 63) <span class="font-normal text-on-surface-variant">${upperTotal}/63</span></td>
-    <td class="py-2 text-right pr-2 font-black text-emerald-700">${bonus>0?'+35':(63-upperTotal>0?`-${63-upperTotal}`:'✓')}</td>`;
-  bonusRow.style.background = bonus>0?"#f0fdf4":"transparent";
+    <td class="py-2 pl-2 text-xs text-[var(--forest)] font-bold">Bonus (need 63) <span class="font-normal text-on-surface-variant">${upperTotal}/63</span></td>
+    <td class="py-2 text-right pr-2 font-black text-[var(--forest)]">${bonus>0?'+35':(63-upperTotal>0?`-${63-upperTotal}`:'✓')}</td>`;
+  bonusRow.style.background = bonus>0?"rgba(0,109,54,0.06)":"transparent";
   tbody.appendChild(bonusRow);
 
   addHdr("Lower Section");
@@ -467,8 +481,8 @@ function renderScorecard() {
 
   const totalRow = document.createElement("tr");
   totalRow.innerHTML = `
-    <td class="pt-4 pb-2 font-black text-sm text-emerald-900 border-t border-emerald-100">TOTAL</td>
-    <td class="pt-4 pb-2 text-right font-black text-lg text-emerald-700 border-t border-emerald-100">${getTotal()}</td>`;
+    <td class="pt-4 pb-2 pl-2 font-black text-sm text-[var(--maroon)] border-t border-[var(--ink)]/10">TOTAL</td>
+    <td class="pt-4 pb-2 pr-2 text-right font-black text-lg text-[var(--forest)] border-t border-[var(--ink)]/10">${getTotal()}</td>`;
   tbody.appendChild(totalRow);
 
   document.getElementById("upper-total-disp").textContent = upperTotal;
@@ -489,9 +503,9 @@ function appendScoreRow(tbody, id) {
   else if (preview!==null) row.classList.add("preview");
 
   let cell;
-  if (isScored)          cell = `<span style="${scores[id]===0?"color:#9ca3af":""}">${scores[id]}</span>`;
-  else if (preview!==null) cell = `<span style="color:#059669;font-style:italic;">${preview}</span>`;
-  else                   cell = `<span style="color:#cbd5e1">—</span>`;
+  if (isScored)          cell = `<span style="${scores[id]===0?"color:#a39a86":""}">${scores[id]}</span>`;
+  else if (preview!==null) cell = `<span style="color:#006d36;font-style:italic;">${preview}</span>`;
+  else                   cell = `<span style="color:#ddd4ba">—</span>`;
 
   row.innerHTML = `
     <td class="py-2 pl-2 text-xs font-semibold text-on-surface" title="${cat.desc}">${cat.label}</td>
@@ -499,7 +513,7 @@ function appendScoreRow(tbody, id) {
 
   if (!isScored) {
     row.onclick = () => scoreCategory(id);
-    row.addEventListener("mouseenter", ()=>{ row.style.background="#f0fdf4"; });
+    row.addEventListener("mouseenter", ()=>{ row.style.background="#F3ECDC"; });
     row.addEventListener("mouseleave", ()=>{ row.style.background=""; });
   }
   tbody.appendChild(row);
@@ -511,7 +525,7 @@ function updateUI() {
   document.getElementById("turn-display").textContent = `${14-turnsLeft} / 13`;
 
   const pips = document.querySelectorAll("#rolls-pips div");
-  pips.forEach((p,i)=>{ p.style.background = i<rollsLeft?"#10b981":"#e2e8f0"; });
+  pips.forEach((p,i)=>{ p.style.background = i<rollsLeft?"#006d36":"#ddd4ba"; });
   document.getElementById("rolls-text").textContent = `${rollsLeft} remaining`;
 }
 
@@ -530,12 +544,15 @@ function endGame() {
   const bonus = getBonus();
   const lower = getLowerTotal();
 
+  // Cosmetic: ratings recolored from generic yellow/green/blue/purple/slate
+  // to the site palette, text translated from Hebrew to English, badge
+  // classes swapped from Tailwind defaults to palette-matching utilities.
   const ratings = [
-    { min:300, emoji:"🏆", text:"אגדי! תוצאה מדהימה!", bg:"linear-gradient(135deg,#854d0e,#ca8a04)", badge:"bg-yellow-100 text-yellow-800" },
-    { min:250, emoji:"🥇", text:"מצוין! שיחקת נהדר!",  bg:"linear-gradient(135deg,#065f46,#10b981)", badge:"bg-emerald-100 text-emerald-800" },
-    { min:200, emoji:"🥈", text:"טוב מאוד! כמעט מושלם.", bg:"linear-gradient(135deg,#1e3a5f,#3b82f6)", badge:"bg-blue-100 text-blue-800" },
-    { min:150, emoji:"🥉", text:"לא רע! יש מקום לשיפור.", bg:"linear-gradient(135deg,#4c1d95,#8b5cf6)", badge:"bg-purple-100 text-purple-800" },
-    { min:0,   emoji:"💪", text:"ניסיון טוב! נסה שוב!",  bg:"linear-gradient(135deg,#374151,#6b7280)", badge:"bg-slate-100 text-slate-700" },
+    { min:300,text:"Legendary! Incredible score!", bg:"linear-gradient(135deg,#6E3A12,#C9952C)", badge:"bg-[#C9952C]/15 text-[#6E3A12]" },
+    { min:250, text:"Excellent! Great playing!",    bg:"linear-gradient(135deg,#00431F,#006d36)", badge:"bg-[#006d36]/12 text-[#00431F]" },
+    { min:200, text:"Very good! Almost perfect.",   bg:"linear-gradient(135deg,#5A3B10,#8E5A2A)", badge:"bg-[#8E5A2A]/15 text-[#5A3B10]" },
+    { min:150, text:"Not bad! Room to improve.",    bg:"linear-gradient(135deg,#5B2A3A,#8E0045)", badge:"bg-[#8E0045]/12 text-[#5B2A3A]" },
+    { min:0, text:"Good attempt! Try again!",     bg:"linear-gradient(135deg,#4A4034,#6B5D4A)", badge:"bg-[#6B5D4A]/15 text-[#4A4034]" },
   ];
   const r = ratings.find(x=>total>=x.min);
 

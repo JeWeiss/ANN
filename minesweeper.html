@@ -5,7 +5,9 @@
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Atar Noder Neder | Minesweeper</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Inter:wght@400;600;800&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 <script>
 tailwind.config = {
@@ -16,10 +18,10 @@ tailwind.config = {
         "primary-container": "#50c878", "on-primary-container": "#005025",
         "secondary": "#516169", "secondary-container": "#d2e2ec",
         "on-secondary-container": "#55656d",
-        "surface": "#f7f9fb", "surface-container": "#eceef0",
-        "on-surface": "#191c1e", "on-surface-variant": "#3e4a3f",
-        "outline": "#6e7a6e", "outline-variant": "#bdcabc",
-        "background": "#f7f9fb",
+        "surface": "#FBF8F2", "surface-container": "#F3ECDC",
+        "on-surface": "#241B2F", "on-surface-variant": "#5c5468",
+        "outline": "#bdb39a", "outline-variant": "#ddd4ba",
+        "background": "#FBF8F2",
       },
       fontFamily: { "body": ["Plus Jakarta Sans"] },
     },
@@ -28,80 +30,108 @@ tailwind.config = {
 </script>
 <style>
   * { box-sizing: border-box; }
+  :root{ --paper:#FBF8F2; --ink:#241B2F; --maroon:#8E0045; --forest:#006d36; --terracotta:#D66F4B; --brass:#C9952C; --cream:#F3ECDC; }
   body { font-family: 'Plus Jakarta Sans', sans-serif; }
+  .font-display{ font-family:'Fraunces', serif; }
+  .font-eyebrow{ font-family:'Inter', sans-serif; letter-spacing:0.13em; }
   .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
   .hide-scrollbar::-webkit-scrollbar { display: none; }
   .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-  .glass-panel { background: rgba(255,255,255,0.65); backdrop-filter: blur(14px); border: 1px solid rgba(226,232,240,0.9); }
 
-  /* ── Cell styles ── */
+  body.bg-background{
+    background-image: radial-gradient(rgba(36,27,47,0.06) 1px, transparent 1px);
+    background-size: 18px 18px;
+  }
+
+  .glass-panel {
+    background:#fff; border:1px solid rgba(36,27,47,0.08);
+    border-radius:10px; box-shadow:3px 3px 0 rgba(36,27,47,0.07);
+  }
+
+  /* ── Cell styles: chart tiles on an exploration map, not Windows squares ── */
   .cell {
     width: var(--cell-size, 44px);
     height: var(--cell-size, 44px);
-    border-radius: max(6px, calc(var(--cell-size, 44px) * 0.22));
+    border-radius: 6px; /* capped flat — was a dynamic calc() that scaled past 10px */
     display: flex; align-items: center; justify-content: center;
     cursor: pointer;
     font-weight: 900;
+    font-family: 'Fraunces', serif;
     font-size: var(--cell-font, 14px);
     transition: all 0.12s ease;
     user-select: none;
     position: relative;
   }
   .cell-hidden {
-    background: white;
-    border: 1.5px solid #e2e8f0;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    background: var(--cream);
+    border: 1.5px solid #ddd4ba;
+    box-shadow: 1.5px 1.5px 0 rgba(36,27,47,0.12);
   }
-  .cell-hidden:hover { background: #f0fdf4; border-color: #86efac; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,109,54,0.15); }
+  .cell-hidden:hover { background: #ece1c5; border-color: var(--brass); transform: translateY(-1px); box-shadow: 2px 3px 0 rgba(36,27,47,0.16); }
   .cell-revealed {
-    background: #f8fafc;
-    border: 1.5px solid #e2e8f0;
+    background: var(--paper);
+    border: 1.5px solid #ddd4ba;
     cursor: default;
-    box-shadow: inset 0 1px 3px rgba(0,0,0,0.04);
+    box-shadow: inset 0 1px 2px rgba(36,27,47,0.05);
   }
   .cell-flagged {
-    background: #fff7ed;
-    border: 1.5px solid #fed7aa;
-    box-shadow: 0 2px 8px rgba(251,146,60,0.2);
+    background: #fbeccf;
+    border: 1.5px solid var(--brass);
+    box-shadow: 1.5px 1.5px 0 rgba(110,58,18,0.18);
   }
   .cell-mine-hit {
-    background: #fef2f2 !important;
-    border: 1.5px solid #fca5a5 !important;
-    box-shadow: 0 0 0 3px rgba(239,68,68,0.2) !important;
+    background: #f7e2dd !important;
+    border: 1.5px solid #c97a64 !important;
+    box-shadow: 0 0 0 3px rgba(163,59,46,0.18) !important;
     animation: explode 0.3s ease;
   }
   .cell-mine-revealed {
-    background: #fef2f2;
-    border: 1.5px solid #fca5a5;
+    background: #f7e2dd;
+    border: 1.5px solid #c97a64;
     cursor: default;
   }
   .cell-win {
-    background: #f0fdf4 !important;
-    border: 1.5px solid #86efac !important;
+    background: #e3f0e6 !important;
+    border: 1.5px solid var(--forest) !important;
     animation: winPulse 0.4s ease;
   }
-  @keyframes explode {
-    0% { transform: scale(1); } 40% { transform: scale(1.3); } 100% { transform: scale(1); }
-  }
-  @keyframes winPulse {
-    0% { transform: scale(1); } 50% { transform: scale(1.08); } 100% { transform: scale(1); }
-  }
+  @keyframes explode { 0%{transform:scale(1);} 40%{transform:scale(1.3);} 100%{transform:scale(1);} }
+  @keyframes winPulse { 0%{transform:scale(1);} 50%{transform:scale(1.08);} 100%{transform:scale(1);} }
 
-  /* Number colors */
+  /* Number colors — recolored from generic blue/red/purple/cyan
+     (SaaS-trope colors) to an earthy "elevation chart" palette */
   .n1 { color: #006d36; }
-  .n2 { color: #1d4ed8; }
-  .n3 { color: #dc2626; }
-  .n4 { color: #7c3aed; }
-  .n5 { color: #c2410c; }
-  .n6 { color: #0891b2; }
-  .n7 { color: #374151; }
-  .n8 { color: #6b7280; }
+  .n2 { color: #8E6A2A; }
+  .n3 { color: #D66F4B; }
+  .n4 { color: #8E0045; }
+  .n5 { color: #A33B2E; }
+  .n6 { color: #3F6B6B; }
+  .n7 { color: #5c5468; }
+  .n8 { color: #241B2F; }
 
   .bar-fill { transition: width 0.5s ease; }
 
-  /* Modal */
+  /* Modal — logbook stamp */
   #end-modal { display: none; }
   #end-modal.show { display: flex; }
+  .modal-card-ms{
+    background:#F0E6CC; border-radius:10px; position:relative;
+    box-shadow: 6px 8px 0 rgba(36,27,47,0.18);
+  }
+  .modal-card-ms::before{
+    content:''; position:absolute; top:-7px; left:8px; right:8px; height:7px;
+    background: linear-gradient(135deg,#F0E6CC 50%, transparent 50%), linear-gradient(45deg,#F0E6CC 50%, transparent 50%);
+    background-size:14px 14px; background-position:0 0,7px 0; background-repeat:repeat-x;
+  }
+  .wax-seal{
+    width:60px; height:60px; border-radius:50%;
+    background: radial-gradient(circle at 35% 30%, #C0573F, #8E2F1F);
+    border:2px dashed rgba(255,255,255,0.5);
+    display:flex; align-items:center; justify-content:center; margin:0 auto;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.3), inset 0 0 0 4px rgba(0,0,0,0.08);
+  }
+  .ledger-row{ display:flex; align-items:baseline; gap:6px; font-size:13px; }
+  .ledger-fill{ flex:1; border-bottom:1px dotted rgba(36,27,47,0.3); margin-bottom:3px; }
 </style>
 <script src="navbar.js" defer></script>
 <script src="header.js" defer></script>
@@ -121,10 +151,10 @@ tailwind.config = {
   <div class="flex-1 p-5 grid grid-cols-12 gap-5 overflow-hidden">
 
     <!-- LEFT: How to Play -->
-    <aside class="col-span-3 glass-panel rounded-[28px] p-6 flex flex-col gap-4 overflow-y-auto hide-scrollbar">
-      <div class="flex items-center gap-2 text-emerald-800 font-black tracking-tighter uppercase text-xs">
+    <aside class="col-span-3 glass-panel p-6 flex flex-col gap-4 overflow-y-auto hide-scrollbar">
+      <div class="flex items-center gap-2 text-[var(--maroon)] font-black tracking-tighter uppercase text-xs font-eyebrow">
         <span class="material-symbols-outlined text-sm">help_outline</span>
-        <span>How to Play</span>
+        <span>How to Chart</span>
       </div>
 
       <!-- Steps -->
@@ -132,123 +162,123 @@ tailwind.config = {
         <div class="flex gap-3">
           <div class="w-7 h-7 shrink-0 rounded-full bg-primary flex items-center justify-center text-[11px] font-black text-white">1</div>
           <div>
-            <p class="text-xs font-bold text-on-surface mb-0.5">Reveal a Tile</p>
-            <p class="text-[11px] leading-relaxed text-on-surface-variant">Left-click any tile to reveal it. The first click is always safe — mines are placed after it.</p>
+            <p class="text-xs font-bold text-on-surface mb-0.5">Survey a Tile</p>
+            <p class="text-[11px] leading-relaxed text-on-surface-variant">Left-click any tile to reveal it. The first click is always safe — hazards are placed after it.</p>
           </div>
         </div>
         <div class="flex gap-3">
           <div class="w-7 h-7 shrink-0 rounded-full bg-primary flex items-center justify-center text-[11px] font-black text-white">2</div>
           <div>
-            <p class="text-xs font-bold text-on-surface mb-0.5">Read the Numbers</p>
-            <p class="text-[11px] leading-relaxed text-on-surface-variant">Each number tells you how many mines are in the 8 surrounding tiles. Use this to deduce safe spots.</p>
+            <p class="text-xs font-bold text-on-surface mb-0.5">Read the Markings</p>
+            <p class="text-[11px] leading-relaxed text-on-surface-variant">Each number tells you how many hazards lie in the 8 surrounding tiles. Use this to deduce safe ground.</p>
           </div>
         </div>
         <div class="flex gap-3">
           <div class="w-7 h-7 shrink-0 rounded-full bg-primary flex items-center justify-center text-[11px] font-black text-white">3</div>
           <div>
-            <p class="text-xs font-bold text-on-surface mb-0.5">Place Flags</p>
-            <p class="text-[11px] leading-relaxed text-on-surface-variant">Right-click (or long-press on mobile) to place a 🚩 flag on a tile you suspect is a mine. Flag all mines to win!</p>
+            <p class="text-xs font-bold text-on-surface mb-0.5">Place Markers</p>
+            <p class="text-[11px] leading-relaxed text-on-surface-variant">Right-click (or long-press on mobile) to plant a 🚩 marker on a tile you suspect is dangerous. Mark every hazard to win!</p>
           </div>
         </div>
         <div class="flex gap-3">
           <div class="w-7 h-7 shrink-0 rounded-full bg-primary flex items-center justify-center text-[11px] font-black text-white">4</div>
           <div>
-            <p class="text-xs font-bold text-on-surface mb-0.5">Win the Game</p>
-            <p class="text-[11px] leading-relaxed text-on-surface-variant">Reveal all safe tiles without hitting a mine. You win when every non-mine cell is uncovered.</p>
+            <p class="text-xs font-bold text-on-surface mb-0.5">Complete the Chart</p>
+            <p class="text-[11px] leading-relaxed text-on-surface-variant">Reveal all safe ground without hitting a hazard. You win when every safe tile is charted.</p>
           </div>
         </div>
       </div>
 
-      <hr class="border-slate-200"/>
+      <hr class="border-[var(--ink)]/10"/>
 
       <!-- Tile legend -->
       <div>
-        <p class="text-[10px] font-black uppercase tracking-widest text-emerald-800 mb-3">Tile Guide</p>
+        <p class="text-[10px] font-black uppercase tracking-widest text-[var(--maroon)] mb-3 font-eyebrow">Chart Key</p>
         <div class="flex flex-col gap-2.5">
           <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-xl bg-white border-2 border-slate-200 shadow-sm shrink-0"></div>
+            <div class="w-9 h-9 rounded-[8px] bg-[var(--cream)] border-2 border-[#ddd4ba] shadow-sm shrink-0"></div>
             <div>
-              <p class="text-xs font-bold text-on-surface">Hidden</p>
-              <p class="text-[11px] text-on-surface-variant">Unrevealed tile — click to uncover</p>
+              <p class="text-xs font-bold text-on-surface">Unsurveyed</p>
+              <p class="text-[11px] text-on-surface-variant">Unrevealed tile — click to chart it</p>
             </div>
           </div>
           <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center text-sm font-black text-[#006d36] shrink-0">3</div>
+            <div class="w-9 h-9 rounded-[8px] bg-[var(--paper)] border border-[#ddd4ba] flex items-center justify-center text-sm font-black font-display text-[var(--forest)] shrink-0">3</div>
             <div>
-              <p class="text-xs font-bold text-on-surface">Number</p>
-              <p class="text-[11px] text-on-surface-variant">Count of adjacent mines</p>
+              <p class="text-xs font-bold text-on-surface">Marking</p>
+              <p class="text-[11px] text-on-surface-variant">Count of adjacent hazards</p>
             </div>
           </div>
           <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center text-base shrink-0"></div>
+            <div class="w-9 h-9 rounded-[8px] bg-[var(--paper)] border border-[#ddd4ba] flex items-center justify-center text-base shrink-0"></div>
             <div>
-              <p class="text-xs font-bold text-on-surface">Empty</p>
-              <p class="text-[11px] text-on-surface-variant">No adjacent mines — auto-expands</p>
+              <p class="text-xs font-bold text-on-surface">Clear ground</p>
+              <p class="text-[11px] text-on-surface-variant">No adjacent hazards — auto-expands</p>
             </div>
           </div>
           <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-base shrink-0">🚩</div>
+            <div class="w-9 h-9 rounded-[8px] bg-[#fbeccf] border border-[var(--brass)] flex items-center justify-center text-base shrink-0">🚩</div>
             <div>
-              <p class="text-xs font-bold text-on-surface">Flagged</p>
-              <p class="text-[11px] text-on-surface-variant">Right-click to mark a suspected mine</p>
+              <p class="text-xs font-bold text-on-surface">Marked</p>
+              <p class="text-[11px] text-on-surface-variant">Right-click to flag a suspected hazard</p>
             </div>
           </div>
           <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-xl bg-red-50 border border-red-200 flex items-center justify-center text-base shrink-0">💣</div>
+            <div class="w-9 h-9 rounded-[8px] bg-[#f7e2dd] border border-[#c97a64] flex items-center justify-center text-base shrink-0">💣</div>
             <div>
-              <p class="text-xs font-bold text-on-surface">Mine</p>
-              <p class="text-[11px] text-on-surface-variant">Hit this and it's game over!</p>
+              <p class="text-xs font-bold text-on-surface">Hazard</p>
+              <p class="text-[11px] text-on-surface-variant">Hit this and the expedition ends!</p>
             </div>
           </div>
         </div>
       </div>
 
-      <hr class="border-slate-200"/>
+      <hr class="border-[var(--ink)]/10"/>
 
       <!-- Tips -->
       <div>
-        <p class="text-[10px] font-black uppercase tracking-widest text-emerald-800 mb-2">Strategy Tips</p>
+        <p class="text-[10px] font-black uppercase tracking-widest text-[var(--maroon)] mb-2 font-eyebrow">Surveyor's Tips</p>
         <ul class="flex flex-col gap-2">
           <li class="flex items-start gap-2 text-[11px] text-on-surface-variant leading-relaxed">
-            <span class="text-emerald-500 font-black shrink-0 mt-0.5">→</span>
-            Start from a corner — corners have fewer neighbors, giving you more info early.
+            <span class="text-[var(--forest)] font-black shrink-0 mt-0.5">→</span>
+            Start from a corner — corners have fewer neighbors, giving you more information early.
           </li>
           <li class="flex items-start gap-2 text-[11px] text-on-surface-variant leading-relaxed">
-            <span class="text-emerald-500 font-black shrink-0 mt-0.5">→</span>
-            If a <span class="font-bold text-on-surface mx-0.5">1</span> tile has exactly 1 hidden neighbor, that neighbor is definitely a mine.
+            <span class="text-[var(--forest)] font-black shrink-0 mt-0.5">→</span>
+            If a <span class="font-bold text-on-surface mx-0.5">1</span> tile has exactly 1 hidden neighbor, that neighbor is definitely a hazard.
           </li>
           <li class="flex items-start gap-2 text-[11px] text-on-surface-variant leading-relaxed">
-            <span class="text-emerald-500 font-black shrink-0 mt-0.5">→</span>
-            Flag confidently — the mine counter helps you track remaining mines.
+            <span class="text-[var(--forest)] font-black shrink-0 mt-0.5">→</span>
+            Mark confidently — the hazard counter helps you track what's left.
           </li>
           <li class="flex items-start gap-2 text-[11px] text-on-surface-variant leading-relaxed">
-            <span class="text-emerald-500 font-black shrink-0 mt-0.5">→</span>
-            When stuck, count: if hidden neighbors = number shown, they're <span class="font-bold text-on-surface mx-0.5">all</span> mines.
+            <span class="text-[var(--forest)] font-black shrink-0 mt-0.5">→</span>
+            When stuck, count: if hidden neighbors = the number shown, they're <span class="font-bold text-on-surface mx-0.5">all</span> hazards.
           </li>
           <li class="flex items-start gap-2 text-[11px] text-on-surface-variant leading-relaxed">
-            <span class="text-emerald-500 font-black shrink-0 mt-0.5">→</span>
-            Empty (blank) reveals cascade automatically — use them to open large areas fast.
+            <span class="text-[var(--forest)] font-black shrink-0 mt-0.5">→</span>
+            Clear ground cascades automatically — use it to chart large areas fast.
           </li>
         </ul>
       </div>
 
-      <hr class="border-slate-200"/>
+      <hr class="border-[var(--ink)]/10"/>
 
       <!-- Difficulty info -->
       <div>
-        <p class="text-[10px] font-black uppercase tracking-widest text-emerald-800 mb-2">Difficulty Levels</p>
+        <p class="text-[10px] font-black uppercase tracking-widest text-[var(--maroon)] mb-2 font-eyebrow">Expedition Scale</p>
         <div class="flex flex-col gap-2">
-          <div class="flex justify-between items-center bg-emerald-50 rounded-xl px-3 py-2">
-            <span class="text-xs font-bold text-emerald-800">Easy</span>
-            <span class="text-[11px] text-on-surface-variant">9×9 · 10 mines</span>
+          <div class="flex justify-between items-center bg-[var(--cream)] rounded-[8px] px-3 py-2">
+            <span class="text-xs font-bold text-[var(--forest)]">Easy</span>
+            <span class="text-[11px] text-on-surface-variant">9×9 · 10 hazards</span>
           </div>
-          <div class="flex justify-between items-center bg-amber-50 rounded-xl px-3 py-2">
-            <span class="text-xs font-bold text-amber-800">Medium</span>
-            <span class="text-[11px] text-on-surface-variant">16×16 · 40 mines</span>
+          <div class="flex justify-between items-center bg-[#fbeccf] rounded-[8px] px-3 py-2">
+            <span class="text-xs font-bold text-[#8E5A0E]">Medium</span>
+            <span class="text-[11px] text-on-surface-variant">16×16 · 40 hazards</span>
           </div>
-          <div class="flex justify-between items-center bg-red-50 rounded-xl px-3 py-2">
-            <span class="text-xs font-bold text-red-800">Hard</span>
-            <span class="text-[11px] text-on-surface-variant">16×30 · 99 mines</span>
+          <div class="flex justify-between items-center bg-[#f7e2dd] rounded-[8px] px-3 py-2">
+            <span class="text-xs font-bold text-[#A33B2E]">Hard</span>
+            <span class="text-[11px] text-on-surface-variant">16×30 · 99 hazards</span>
           </div>
         </div>
       </div>
@@ -258,32 +288,32 @@ tailwind.config = {
     <section class="col-span-6 flex flex-col items-center justify-center gap-4 overflow-hidden">
 
       <!-- Stats bar -->
-      <div class="glass-panel rounded-2xl px-6 py-3 flex items-center gap-8 w-full justify-center">
+      <div class="glass-panel rounded-[10px] px-6 py-3 flex items-center gap-8 w-full justify-center">
         <div class="flex items-center gap-2">
-          <span class="material-symbols-outlined text-base text-red-500" style="font-variation-settings:'FILL' 1;">flag</span>
+          <span class="material-symbols-outlined text-base text-[var(--terracotta)]" style="font-variation-settings:'FILL' 1;">flag</span>
           <div>
-            <p class="text-[10px] font-black uppercase text-on-surface-variant">Mines Left</p>
-            <p id="mines-counter" class="text-xl font-black text-on-surface leading-none">10</p>
+            <p class="text-[10px] font-black uppercase text-on-surface-variant font-eyebrow">Hazards Left</p>
+            <p id="mines-counter" class="text-xl font-black text-on-surface leading-none font-display">10</p>
           </div>
         </div>
-        <div class="w-px h-8 bg-slate-200"></div>
+        <div class="w-px h-8 bg-[var(--ink)]/10"></div>
         <div class="flex items-center gap-2">
-          <span class="material-symbols-outlined text-base text-emerald-600">schedule</span>
+          <span class="material-symbols-outlined text-base text-[var(--forest)]">schedule</span>
           <div>
-            <p class="text-[10px] font-black uppercase text-on-surface-variant">Time</p>
-            <p id="timer-display" class="text-xl font-black text-on-surface leading-none">0:00</p>
+            <p class="text-[10px] font-black uppercase text-on-surface-variant font-eyebrow">Time</p>
+            <p id="timer-display" class="text-xl font-black text-on-surface leading-none font-display">0:00</p>
           </div>
         </div>
-        <div class="w-px h-8 bg-slate-200"></div>
+        <div class="w-px h-8 bg-[var(--ink)]/10"></div>
         <div class="flex items-center gap-2">
-          <span class="material-symbols-outlined text-base text-slate-500">grid_view</span>
+          <span class="material-symbols-outlined text-base text-on-surface-variant">grid_view</span>
           <div>
-            <p class="text-[10px] font-black uppercase text-on-surface-variant">Revealed</p>
-            <p id="revealed-counter" class="text-xl font-black text-on-surface leading-none">0</p>
+            <p class="text-[10px] font-black uppercase text-on-surface-variant font-eyebrow">Charted</p>
+            <p id="revealed-counter" class="text-xl font-black text-on-surface leading-none font-display">0</p>
           </div>
         </div>
-        <div class="w-px h-8 bg-slate-200"></div>
-        <button onclick="newGame()" class="flex items-center gap-2 px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-full font-bold text-xs uppercase tracking-widest transition-colors">
+        <div class="w-px h-8 bg-[var(--ink)]/10"></div>
+        <button onclick="newGame()" class="flex items-center gap-2 px-4 py-2 bg-[var(--cream)] hover:bg-[#e9dfc4] text-[var(--forest)] rounded-[8px] font-bold text-xs uppercase tracking-widest transition-colors border border-[var(--ink)]/10">
           <span class="material-symbols-outlined text-base">refresh</span>
           Restart
         </button>
@@ -291,100 +321,98 @@ tailwind.config = {
 
       <!-- Board container — scrollable for large grids -->
       <div class="flex-1 overflow-auto hide-scrollbar flex items-center justify-center w-full">
-        <div id="board" class="glass-panel rounded-[24px] p-4 shadow-xl"></div>
+        <div id="board" class="glass-panel rounded-[10px] p-4 shadow-xl"></div>
       </div>
     </section>
 
     <!-- RIGHT: Facts + Game Stats -->
     <aside class="col-span-3 flex flex-col gap-4 overflow-y-auto hide-scrollbar">
 
-      <!-- World Facts -->
-
       <!-- Game Stats -->
-    <div class="glass-panel rounded-[28px] p-6 flex flex-col gap-4">
-        <div id="game-message" class="text-sm font-bold text-emerald-700"></div>
+    <div class="glass-panel p-6 flex flex-col gap-4">
+        <div id="game-message" class="text-sm font-bold text-[var(--forest)]"></div>
         <div class="flex items-center gap-3">
-        <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Difficulty</label>
+        <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest font-eyebrow">Scale</label>
         <select id="difficulty-select" onchange="changeDifficulty()"
-            class="text-xs font-bold bg-slate-100 text-slate-700 border-none rounded-full px-3 py-1.5 focus:outline-none cursor-pointer">
+            class="text-xs font-bold bg-[var(--cream)] text-on-surface border border-[var(--ink)]/10 rounded-[8px] px-3 py-1.5 focus:outline-none cursor-pointer">
             <option value="easy">Easy (9×9, 10💣)</option>
             <option value="medium">Medium (16×16, 40💣)</option>
             <option value="hard">Hard (16×30, 99💣)</option>
         </select>
         </div>
-        <button onclick="newGame()" class="px-5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-full font-bold text-xs uppercase tracking-widest transition-colors">
+        <button onclick="newGame()" class="px-5 py-2 bg-[var(--cream)] hover:bg-[#e9dfc4] text-on-surface rounded-[8px] font-bold text-xs uppercase tracking-widest transition-colors border border-[var(--ink)]/10">
             New Game
         </button>
-        
-        <div class="flex items-center gap-2 text-emerald-800 font-black tracking-tighter uppercase text-xs">
+
+        <div class="flex items-center gap-2 text-[var(--maroon)] font-black tracking-tighter uppercase text-xs font-eyebrow">
           <span class="material-symbols-outlined text-sm">bar_chart</span>
-          <span>Game Stats</span>
+          <span>Survey Log</span>
         </div>
 
         <div class="grid grid-cols-2 gap-2">
-          <div class="bg-emerald-50 rounded-2xl p-3 text-center">
-            <p id="stat-played" class="text-2xl font-black text-emerald-800">0</p>
+          <div class="bg-[var(--cream)] rounded-[8px] p-3 text-center">
+            <p id="stat-played" class="text-2xl font-black text-[var(--maroon)] font-display">0</p>
             <p class="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Played</p>
           </div>
-          <div class="bg-emerald-50 rounded-2xl p-3 text-center">
-            <p id="stat-wins" class="text-2xl font-black text-emerald-800">0</p>
+          <div class="bg-[var(--cream)] rounded-[8px] p-3 text-center">
+            <p id="stat-wins" class="text-2xl font-black text-[var(--maroon)] font-display">0</p>
             <p class="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Wins</p>
           </div>
-          <div class="bg-emerald-50 rounded-2xl p-3 text-center">
-            <p id="stat-winpct" class="text-2xl font-black text-emerald-800">—</p>
+          <div class="bg-[var(--cream)] rounded-[8px] p-3 text-center">
+            <p id="stat-winpct" class="text-2xl font-black text-[var(--maroon)] font-display">—</p>
             <p class="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Win %</p>
           </div>
-          <div class="bg-emerald-50 rounded-2xl p-3 text-center">
-            <p id="stat-best" class="text-2xl font-black text-emerald-800">—</p>
+          <div class="bg-[var(--cream)] rounded-[8px] p-3 text-center">
+            <p id="stat-best" class="text-2xl font-black text-[var(--maroon)] font-display">—</p>
             <p class="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Best Time</p>
           </div>
         </div>
 
-        <hr class="border-slate-200"/>
+        <hr class="border-[var(--ink)]/10"/>
 
         <!-- Current game live stats -->
         <div>
-          <p class="text-[10px] font-black uppercase tracking-widest text-emerald-800 mb-3">Current Game</p>
+          <p class="text-[10px] font-black uppercase tracking-widest text-[var(--maroon)] mb-3 font-eyebrow">Current Expedition</p>
           <div class="flex flex-col gap-2">
             <div class="flex justify-between items-center">
               <span class="text-xs font-bold text-on-surface-variant">Progress</span>
-              <span id="curr-progress-txt" class="text-xs font-black text-emerald-800">0%</span>
+              <span id="curr-progress-txt" class="text-xs font-black text-[var(--maroon)]">0%</span>
             </div>
-            <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-              <div id="curr-progress-bar" class="h-full bg-emerald-500 rounded-full bar-fill" style="width:0%"></div>
+            <div class="w-full h-2 bg-[var(--cream)] rounded-full overflow-hidden">
+              <div id="curr-progress-bar" class="h-full bg-[var(--forest)] rounded-full bar-fill" style="width:0%"></div>
             </div>
             <div class="flex justify-between items-center mt-1">
-              <span class="text-xs font-bold text-on-surface-variant">💣 Mines flagged</span>
+              <span class="text-xs font-bold text-on-surface-variant">🚩 Hazards marked</span>
               <span id="curr-flagged" class="text-xs font-black text-on-surface">0</span>
             </div>
             <div class="flex justify-between items-center">
-              <span class="text-xs font-bold text-on-surface-variant">✅ Safe tiles revealed</span>
+              <span class="text-xs font-bold text-on-surface-variant">✅ Safe tiles charted</span>
               <span id="curr-revealed" class="text-xs font-black text-on-surface">0</span>
             </div>
             <div class="flex justify-between items-center">
-              <span class="text-xs font-bold text-on-surface-variant">🕵️ Remaining hidden</span>
+              <span class="text-xs font-bold text-on-surface-variant">🕵️ Unsurveyed</span>
               <span id="curr-hidden" class="text-xs font-black text-on-surface">0</span>
             </div>
           </div>
         </div>
 
-        <hr class="border-slate-200"/>
+        <hr class="border-[var(--ink)]/10"/>
 
         <!-- Best times per difficulty -->
         <div>
-          <p class="text-[10px] font-black uppercase tracking-widest text-emerald-800 mb-2">Best Times</p>
+          <p class="text-[10px] font-black uppercase tracking-widest text-[var(--maroon)] mb-2 font-eyebrow">Best Times</p>
           <div class="flex flex-col gap-1.5">
             <div class="flex justify-between items-center">
               <span class="text-[11px] font-bold text-on-surface-variant">Easy</span>
-              <span id="best-easy" class="text-[11px] font-black text-emerald-700">—</span>
+              <span id="best-easy" class="text-[11px] font-black text-[var(--forest)]">—</span>
             </div>
             <div class="flex justify-between items-center">
               <span class="text-[11px] font-bold text-on-surface-variant">Medium</span>
-              <span id="best-medium" class="text-[11px] font-black text-emerald-700">—</span>
+              <span id="best-medium" class="text-[11px] font-black text-[var(--forest)]">—</span>
             </div>
             <div class="flex justify-between items-center">
               <span class="text-[11px] font-bold text-on-surface-variant">Hard</span>
-              <span id="best-hard" class="text-[11px] font-black text-emerald-700">—</span>
+              <span id="best-hard" class="text-[11px] font-black text-[var(--forest)]">—</span>
             </div>
           </div>
         </div>
@@ -393,28 +421,19 @@ tailwind.config = {
   </div>
 </main>
 
-<!-- End Modal -->
-<div id="end-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 items-center justify-center">
-  <div class="bg-white rounded-[32px] p-10 shadow-2xl max-w-sm w-full mx-4 text-center">
-    <div id="modal-emoji" class="text-6xl mb-3">💣</div>
-    <h2 id="modal-title" class="text-4xl font-black text-emerald-900 tracking-tighter mb-1"></h2>
+<!-- End Modal — logbook stamp -->
+<div id="end-modal" class="fixed inset-0 z-50 items-center justify-center" style="background:rgba(20,15,26,0.62);">
+  <div class="modal-card-ms p-9 max-w-sm w-full mx-4 text-center">
+    <div class="wax-seal mb-3"><span id="modal-emoji" class="text-2xl">💣</span></div>
+    <h2 id="modal-title" class="font-display text-3xl font-semibold tracking-tight mb-1" style="color:var(--ink)"></h2>
     <p id="modal-subtitle" class="text-on-surface-variant text-sm mb-6"></p>
-    <div class="bg-slate-50 rounded-2xl p-5 mb-5 space-y-2 text-left">
-      <div class="flex justify-between text-sm font-bold">
-        <span class="text-on-surface-variant">Time</span>
-        <span id="modal-time" class="text-on-surface">—</span>
-      </div>
-      <div class="flex justify-between text-sm font-bold">
-        <span class="text-on-surface-variant">Tiles revealed</span>
-        <span id="modal-revealed" class="text-on-surface">—</span>
-      </div>
-      <div class="flex justify-between text-sm font-bold">
-        <span class="text-on-surface-variant">Flags placed</span>
-        <span id="modal-flags" class="text-on-surface">—</span>
-      </div>
+    <div class="space-y-1.5 mb-5 text-left" style="color:var(--ink)">
+      <div class="ledger-row"><span>Time</span><span class="ledger-fill"></span><span id="modal-time" class="font-bold">—</span></div>
+      <div class="ledger-row"><span>Tiles charted</span><span class="ledger-fill"></span><span id="modal-revealed" class="font-bold">—</span></div>
+      <div class="ledger-row"><span>Markers placed</span><span class="ledger-fill"></span><span id="modal-flags" class="font-bold">—</span></div>
     </div>
-    <p id="modal-record" class="text-xs font-black text-emerald-600 mb-5"></p>
-    <button onclick="newGame()" class="w-full py-4 bg-primary text-white rounded-full font-black text-sm uppercase tracking-widest hover:opacity-90 transition-opacity">
+    <p id="modal-record" class="text-xs font-black text-[var(--forest)] mb-5 font-eyebrow uppercase"></p>
+    <button onclick="newGame()" class="w-full py-3.5 bg-[var(--forest)] text-white rounded-[8px] font-black text-sm uppercase tracking-widest hover:opacity-90 transition-opacity shadow-[2px_3px_0_#00431F]">
       🔄 Play Again
     </button>
   </div>
@@ -791,9 +810,10 @@ function showEndModal(won) {
   const modal = document.getElementById("end-modal");
   document.getElementById("modal-emoji").textContent   = won ? "🎉" : "💣";
   document.getElementById("modal-title").textContent   = won ? "You Win!" : "Boom!";
+  // Cosmetic: subtitle translated from Hebrew to English (site-wide language fix).
   document.getElementById("modal-subtitle").textContent = won
-    ? "כל התאים הבטוחים חשופים — כישרון אמיתי!"
-    : "פגעת במוקש. נסה שוב!";
+    ? "Every safe tile charted — true talent!"
+    : "You hit a hazard. Try again!";
   document.getElementById("modal-time").textContent     = formatTime(elapsedSeconds);
   document.getElementById("modal-revealed").textContent = revealedCount;
   document.getElementById("modal-flags").textContent    = flagCount;
